@@ -11,6 +11,7 @@ python:
 
 # command to install dependencies
 install:
+  - python -m pip install -U pip setuptools
   - pip install pytest
   - pip install tox-travis codecov
 
