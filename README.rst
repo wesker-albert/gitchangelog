@@ -2,15 +2,15 @@
 gitchangelog
 ============
 
-.. image:: https://img.shields.io/github/license/freepn/gitchangelog
-    :target: https://github.com/freepn/gitchangelog/blob/master/LICENSE
+.. image:: https://img.shields.io/pypi/l/gitchangelog?color=green
+    :alt: PyPI - License
 
 .. image:: https://img.shields.io/github/v/tag/freepn/gitchangelog?color=green&include_prereleases&label=latest%20release
     :target: https://github.com/freepn/gitchangelog/releases
     :alt: GitHub tag (latest SemVer, including pre-release)
 
-.. image:: https://travis-ci.org/freepn/gitchangelog.svg?branch=master
-    :target: https://travis-ci.org/freepn/gitchangelog
+.. image:: https://travis-ci.com/freepn/gitchangelog.svg?branch=master
+    :target: https://travis-ci.com/freepn/gitchangelog
 
 .. image:: https://img.shields.io/codecov/c/github/freepn/gitchangelog
     :target: https://codecov.io/gh/freepn/gitchangelog
