@@ -2,25 +2,22 @@
 gitchangelog
 ============
 
-.. image:: https://img.shields.io/pypi/v/gitchangelog.svg?style=flat
-   :target: https://pypi.python.org/pypi/gitchangelog/
-   :alt: Latest PyPI version
+.. image:: https://img.shields.io/github/license/freepn/gitchangelog
+    :target: https://github.com/freepn/gitchangelog/blob/master/LICENSE
 
-.. image:: https://img.shields.io/pypi/dm/gitchangelog.svg?style=flat
-   :target: https://pypi.python.org/pypi/gitchangelog/
-   :alt: Number of PyPI downloads
+.. image:: https://img.shields.io/github/v/tag/freepn/gitchangelog?color=green&include_prereleases&label=latest%20release
+    :target: https://github.com/freepn/gitchangelog/releases
+    :alt: GitHub tag (latest SemVer, including pre-release)
 
-.. image:: https://img.shields.io/travis/vaab/gitchangelog/master.svg?style=flat
-   :target: https://travis-ci.org/vaab/gitchangelog/
-   :alt: Travis CI build status
+.. image:: https://travis-ci.org/freepn/gitchangelog.svg?branch=master
+    :target: https://travis-ci.org/freepn/gitchangelog
 
-.. image:: https://img.shields.io/appveyor/ci/vaab/gitchangelog.svg
-   :target: https://ci.appveyor.com/project/vaab/gitchangelog/branch/master
-   :alt: Appveyor CI build status
+.. image:: https://img.shields.io/codecov/c/github/freepn/gitchangelog
+    :target: https://codecov.io/gh/freepn/gitchangelog
+    :alt: Codecov
 
-.. image:: https://img.shields.io/codecov/c/github/vaab/gitchangelog.svg
-   :target: https://codecov.io/gh/vaab/gitchangelog
-   :alt: Test coverage
+.. image:: https://img.shields.io/codeclimate/maintainability/freepn/gitchangelog
+    :target: https://codeclimate.com/github/freepn/gitchangelog
 
 
 Use your commit log to make beautifull and configurable changelog file.
