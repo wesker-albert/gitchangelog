@@ -299,11 +299,11 @@ def format_last_exception(prefix="  | "):
     ...     f()
     ... except Exception:
     ...     formated_exception = format_last_exception()
-    ...     raise ValueError('Oups, an error occured:\\n%s'
+    ...     raise ValueError('Oops, an error occured:\\n%s'
     ...         % formated_exception)
     Traceback (most recent call last):
     ...
-    ValueError: Oups, an error occured:
+    ValueError: Oops, an error occured:
       | Traceback (most recent call last):
     ...
       | Exception: Something terrible happened
