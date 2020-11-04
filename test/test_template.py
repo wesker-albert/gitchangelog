@@ -25,7 +25,7 @@ class TemplatingTest(BaseGitReposTest):
 
         gitchangelog.file_put_contents(
             ".gitchangelog.rc",
-            "output_engine = mustache('doesnotexist')")
+            "output_engine = makotemplate('doesnotexist')")
         out, err, errlvl = cmd('$tprog')
         self.assertEqual(
             errlvl, 1,
@@ -43,60 +43,13 @@ class TemplatingTest(BaseGitReposTest):
             msg="The error message should mention 'available'. "
             "Current stderr:\n%s" % err)
         self.assertContains(
-            err, "mustache",
-            msg="The error message should mention 'mustache'. "
+            err, "mako",
+            msg="The error message should mention 'mako'. "
             "Current stderr:\n%s" % err)
         self.assertContains(
             err, "restructuredtext",
             msg="The error message should mention 'restructuredtext'. "
             "Current stderr:\n%s" % err)
-
-    def test_file_template_name(self):
-        """Existing files should be accepted as valid templates"""
-
-        gitchangelog.file_put_contents(
-            "mytemplate.tpl",
-            "check: {{{title}}}")
-        gitchangelog.file_put_contents(
-            ".gitchangelog.rc",
-            "output_engine = mustache('mytemplate.tpl')")
-
-        reference = """check: Changelog"""
-
-        out, err, errlvl = cmd('$tprog --debug')
-        self.assertEqual(
-            err, "",
-            msg="There should be no error messages. "
-            "Current stderr:\n%s" % err)
-        self.assertEqual(
-            errlvl, 0,
-            msg="Should succeed to find template")
-        self.assertNoDiff(
-            reference, out)
-
-    def test_file_template_name_with_git_config_path(self):
-
-        os.mkdir('XYZ')
-        gitchangelog.file_put_contents(
-            os.path.join('XYZ', "mytemplate.tpl"),
-            "check: {{{title}}}")
-        gitchangelog.file_put_contents(
-            ".gitchangelog.rc",
-            "output_engine = mustache('mytemplate.tpl')")
-        self.git.config('gitchangelog.template-path', 'XYZ')
-
-        reference = """check: Changelog"""
-
-        out, err, errlvl = cmd('$tprog --debug')
-        self.assertEqual(
-            err, "",
-            msg="There should be no error messages. "
-            "Current stderr:\n%s" % err)
-        self.assertEqual(
-            errlvl, 0,
-            msg="Should succeed to find template")
-        self.assertNoDiff(
-            reference, out)
 
     def test_template_has_access_to_full_commit(self):
         """Existing files should be accepted as valid templates"""

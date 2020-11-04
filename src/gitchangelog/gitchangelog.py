@@ -7,7 +7,6 @@ from __future__ import absolute_import
 import locale
 import re
 import os
-import os.path
 import sys
 import glob
 import textwrap
@@ -31,7 +30,7 @@ except ImportError:  ## pragma: no cover
     mako = None
 
 
-__version__ = "%%version%%"  ## replaced by autogen.sh
+__version__ = '3.0.4'
 
 DEBUG = None
 
@@ -300,11 +299,11 @@ def format_last_exception(prefix="  | "):
     ...     f()
     ... except Exception:
     ...     formated_exception = format_last_exception()
-    ...     raise ValueError('Oups, an error occured:\\n%s'
+    ...     raise ValueError('Oops, an error occured:\\n%s'
     ...         % formated_exception)
     Traceback (most recent call last):
     ...
-    ValueError: Oups, an error occured:
+    ValueError: Oops, an error occured:
       | Traceback (most recent call last):
     ...
       | Exception: Something terrible happened
