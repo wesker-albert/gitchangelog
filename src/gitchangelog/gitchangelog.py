@@ -7,7 +7,6 @@ from __future__ import absolute_import
 import locale
 import re
 import os
-import os.path
 import sys
 import glob
 import textwrap
@@ -31,7 +30,7 @@ except ImportError:  ## pragma: no cover
     mako = None
 
 
-__version__ = "%%version%%"  ## replaced by autogen.sh
+__version__ = '3.0.4'
 
 DEBUG = None
 
