@@ -19,6 +19,8 @@ import errno
 
 from subprocess import Popen, PIPE
 
+from . import __version__
+
 try:
     import pystache
 except ImportError:  ## pragma: no cover
@@ -29,8 +31,6 @@ try:
 except ImportError:  ## pragma: no cover
     mako = None
 
-
-__version__ = '3.0.4'
 
 DEBUG = None
 
