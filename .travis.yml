@@ -9,6 +9,11 @@ python:
   - "3.9-dev"
   - "nightly"
 
+# needs system pkg for optional runtime dep
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y python3-mako
+
 # command to install dev dependencies
 install:
   - pip install pytest
