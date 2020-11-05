@@ -9,14 +9,14 @@ python:
   - "3.9-dev"
   - "nightly"
 
-# command to install dependencies
+# command to install dev dependencies
 install:
-  - python -m pip install -U pip setuptools
   - pip install pytest
   - pip install tox-travis codecov
 
 # command to run tests
 script:
+  - tox -e lint
   - tox
 
 after_success:
