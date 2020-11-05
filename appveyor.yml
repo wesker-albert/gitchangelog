@@ -30,7 +30,7 @@ build: false
 ## Before tests
 before_test:
   - pip install -e .
-  - pip install coverage codecov
+  - pip install minimock nose coverage codecov
 
 ## Custom test script
 test_script:
