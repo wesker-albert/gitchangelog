@@ -14,7 +14,7 @@ gitchangelog
     :target: https://travis-ci.com/freepn/gitchangelog
     :alt: Travis CI build status
 
-.. image:: https://img.shields.io/appveyor/ci/freepn/gitchangelog.svg
+.. image:: https://ci.appveyor.com/api/projects/status/gjmlx4sv6njbljhn?svg=true
     :target: https://ci.appveyor.com/project/freepn/gitchangelog/branch/master
     :alt: Appveyor CI build status
 
