@@ -22,6 +22,9 @@ after_success:
     - bash <(curl -s https://codecov.io/bash)
 
 jobs:
+  include:
+    - os: osx
+      language: python
   fast_finish: true
   allow_failures:
     - python: "nightly"
