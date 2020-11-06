@@ -14,16 +14,17 @@ gitchangelog
     :target: https://travis-ci.com/freepn/gitchangelog
     :alt: Travis CI build status
 
-.. image:: https://ci.appveyor.com/api/projects/status/gjmlx4sv6njbljhn?svg=true
+.. image:: https://ci.appveyor.com/api/projects/status/github/freepn/gitchangelog?svg=true
     :target: https://ci.appveyor.com/project/freepn/gitchangelog/branch/master
     :alt: Appveyor CI build status
 
 .. image:: https://img.shields.io/codecov/c/github/freepn/gitchangelog
     :target: https://codecov.io/gh/freepn/gitchangelog
-    :alt: Codecov
+    :alt: Codecov test coverage
 
 .. image:: https://img.shields.io/codeclimate/maintainability/freepn/gitchangelog
     :target: https://codeclimate.com/github/freepn/gitchangelog
+    :alt: Code Climate rating
 
 
 Use your commit log to make beautifull and configurable changelog file.

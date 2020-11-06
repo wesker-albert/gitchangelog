@@ -30,7 +30,9 @@ except ImportError:  ## pragma: no cover
     mako = None
 
 
-__version__ = '3.0.4'
+# this accepts a git tag with a 'pN' suffix (as a patch/post release tag) and
+# returns a PEP 440 '-N' that normalizes to a .post version for python
+__version__ = '3.0.4p1'.replace('p', '-')
 
 DEBUG = None
 
