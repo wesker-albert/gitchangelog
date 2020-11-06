@@ -27,7 +27,7 @@ gitchangelog
     :alt: Code Climate rating
 
 
-Use your commit log to make beautifull and configurable changelog file.
+Use your commit log to make beautiful and configurable changelog file.
 
 
 Feature
@@ -39,7 +39,7 @@ Feature
 - refactor commit summary, or commit body on the fly with replace regexp
 - classify commit message into sections (ie: New, Fix, Changes...)
 - any output format supported thanks to templating, you can even choose
-  your own preferred template engine (mako, mustache, full python ...).
+  your own preferred template engine (mako, full python ...).
 - support your merge or rebase workflows and complicated git histories
 - support full or incremental changelog generation to match your needs.
 - support easy access to `trailers key values`_ (if you use them)
@@ -53,8 +53,7 @@ Feature
 Requirements
 ============
 
-``gitchangelog`` is compatible Python 2 and Python 3 on
-Linux/BSD/MacOSX and Windows.
+``gitchangelog`` is compatible with Python 3 on Linux/BSD/MacOSX and Windows.
 
 Please submit an issue if you encounter incompatibilities.
 
@@ -66,33 +65,48 @@ Installation
 full package
 ------------
 
-Gitchangelog is published on PyPI, thus:
+Gitchangelog is published on PyPI, thus::
 
-    pip install gitchangelog
+  $ pip install gitchangelog
 
-\.. is the way to go for install the full package on any platform.
+\.. is the way to go to install the full package on any platform.
 
 If you are installing from source, please note that the development tools
 are not working fully yet on Windows.
 
-The full package provides the ``gitchangelog.py`` executable as long as:
+The full package provides the ``gitchangelog.py`` executable as well as:
 
 - a `reference configuration file`_ that provides system wide defaults for
   all values.
-- some example templates in ``mustache`` and ``mako`` templating
-  engine's language. Ideal to bootstrap your variations.
+- some example templates in the ``mako`` templating engine language.
+  Ideal to bootstrap your variations.
 
 
 from source
 -----------
 
 If you'd rather work from the source repository, it supports the common
-idiom to install it on your system::
+idiom to install it on your system in a virtual env::
 
-    python setup.py install
+  $ python3 -m venv env
+  $ source env/bin/activate
+  $ pip install -e .[test]
+  $ deactivate
 
 Note that for linux/BSD, there's a link to the executable in the root of the
 source. This can be a convenient way to work on the source version.
+
+The alternative to python venv is the ``tox`` test driver.  If you have it
+installed already, use the following commands to run the test environments
+from the gitchangelog source directory::
+
+To run tests::
+
+  $ tox
+
+To run pylint::
+
+  $ tox -e lint
 
 
 single executable installation
@@ -102,8 +116,8 @@ The file ``gitchangelog.py`` is a full blown executable and can be used
 without any other files. This is easier to use naturally on Linux/BSD
 systems. For instance, you could type in::
 
-    curl -sSL https://raw.githubusercontent.com/freepn/gitchangelog/master/src/gitchangelog/gitchangelog.py > /usr/local/bin/gitchangelog &&
-    chmod +x /usr/local/bin/gitchangelog
+  $ curl -sSL https://raw.githubusercontent.com/freepn/gitchangelog/master/src/gitchangelog/gitchangelog.py > /usr/local/bin/gitchangelog &&
+  $ chmod +x /usr/local/bin/gitchangelog
 
 It'll install ``gitchangelog`` to be accessible for all users and will
 use the default python interpreter of your running session.
@@ -248,52 +262,10 @@ To render the template, ``gitchangelog`` will generate a data structure that
 will then be rendered thanks to the output engine. This should help you get
 the exact output that you need.
 
-As people might have different needs and knowledge, a templating
-system using ``mustache`` is available. ``mustache`` templates are
-provided to render both `ReSTructured Text` or `markdown` formats. If
-you know ``mustache`` templating, then you could easily add or modify
-these existing templates.
-
 A ``mako`` templating engine is also provided. You'll find also a ``mako``
 template producing the same `ReSTructured Text` output than the legacy one.
 It's provided for reference and/or further tweak if you would rather use `mako`_
 templates.
-
-
-Mustache
-~~~~~~~~
-
-The ``mustache``  output engine uses `mustache templates`_.
-
-The `mustache`_ templates are powered via `pystache`_ the python
-implementation of the `mustache`_ specifications. So `mustache`_ output engine
-will only be available if you have `pystache`_ module available in your python
-environment.
-
-There are `mustache templates`_ bundled with the default installation
-of gitchangelog. These can be called by providing a simple label to the
-``mustache(..)`` output_engine, for instance (in your ``.gitchangelog.rc``)::
-
-    output_engine = mustache("markdown")
-
-Or you could provide your own mustache template by specifying an
-absolute path (or a relative one, starting from the git toplevel of
-your project by default, or if set, the
-``git config gitchangelog.template-path``
-location) to your template file, for instance::
-
-    output_engine = mustache(".gitchangelog.tpl")
-
-And feel free to copy the bundled templates to use them as bases for
-your own variations. In the source code, these are located in
-``src/gitchangelog/templates/mustache`` directory, once installed they
-are in ``templates/mustache`` directory starting from where your
-``gitchangelog.py`` was installed.
-
-
-.. _mustache: http://mustache.github.io
-.. _pystache: https://pypi.python.org/pypi/pystache
-.. _mustache templates: http://mustache.github.io/mustache.5.html
 
 
 Mako
@@ -310,10 +282,9 @@ of gitchangelog. These can be called by providing a simple label to the
 
     output_engine = makotemplate("markdown")
 
-Or you could provide your own mustache template by specifying an
-absolute path (or a relative one, starting from the git toplevel of
-your project by default, or if set, the
-``git config gitchangelog.template-path``
+Or you could provide your own mako template by specifying an absolute
+path (or a relative one, starting from the git toplevel of your project
+by default, or if set, the ``git config gitchangelog.template-path``
 location) to your template file, for instance::
 
     output_engine = makotemplate(".gitchangelog.tpl")
@@ -398,10 +369,10 @@ Use cases
 =========
 
 
-No sectionning
---------------
+No sectioning
+-------------
 
-If you want to remove sectionning but keep anything else, you should
+If you want to remove sectioning but keep anything else, you should
 probably use::
 
     section_regexps = [
@@ -410,8 +381,8 @@ probably use::
 
     subject_process = (strip | ucfirst | final_dot)
 
-This will disable sectionning and won't remove the prefixes
-used for sectionning from the commit's summary.
+This will disable sectioning and won't remove the prefixes
+used for sectioning from the commit's summary.
 
 
 Incremental changelog
@@ -540,46 +511,14 @@ generated and need a re-fresh because you added new commits or amended some comm
     publish = FileRegexSubst(OUTPUT_FILE, INSERT_POINT_REGEX, r"\1\o\g<rev>")
 
 
-As a second example, here is the same recipe for mustache markdown format::
-
-    OUTPUT_FILE = "CHANGELOG.rst"
-    INSERT_POINT_REGEX = r'''(?isxu)
-    ^
-    (
-      \s*\#\s+Changelog\s*(\n|\r\n|\r)        ## ``Changelog`` line
-    )
-
-    (                     ## Match all between changelog and release rev
-        (
-          (?!
-             (?<=(\n|\r))                ## look back for newline
-             \#\#\s+%(rev)s                     ## revision
-             \s+
-             \([0-9]+-[0-9]{2}-[0-9]{2}\)(\n|\r\n|\r)   ## date
-          )
-          .
-        )*
-    )
-
-    (?P<tail>\#\#\s+(?P<rev>%(rev)s))
-    ''' % {'rev': r"[0-9]+\.[0-9]+(\.[0-9]+)?"}
-
-    revs = [
-        Caret(FileFirstRegexMatch(OUTPUT_FILE, INSERT_POINT_REGEX)),
-        "HEAD"
-    ]
-
-    publish = FileRegexSubst(OUTPUT_FILE, INSERT_POINT_REGEX, r"\1\o\n\g<tail>")
-
-
 Contributing
 ============
 
-Any suggestion or issue is welcome. Push request are very welcome,
+Any suggestion or issue is welcome. Pull request are very welcome,
 please check out the guidelines.
 
 
-Push Request Guidelines
+Pull Request Guidelines
 -----------------------
 
 You can send any code. I'll look at it and will integrate it myself in
