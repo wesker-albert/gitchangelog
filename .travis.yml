@@ -2,18 +2,21 @@ os: linux
 dist: bionic
 language: python
 
-python:
-  - "3.6"
-  - "3.7"
-  - "3.8"
-  - "3.9-dev"
-  - "nightly"
+cache:
+  directories:
+  - "$HOME/.cache/pip"
+  - "$HOME/.pyenv"
 
-# command to install dev dependencies
+# upgrade system pip and test driver
+before_install:
+  - python3 --version
+  - pip3 install -U pip
+
+# command to install dev dependencies (linux)
 install:
-  - pip install tox-travis codecov
+  - pip3 install tox-travis codecov
 
-# command to run tests
+# command to run tests (linux)
 script:
   - tox -e lint
   - tox
@@ -21,18 +24,67 @@ script:
 after_success:
     - bash <(curl -s https://codecov.io/bash)
 
-jobs:
+matrix:
   include:
-    - os: osx
-      language: python
-  fast_finish: true
-  allow_failures:
-    - python: "nightly"
+  - python: 3.6
+  - python: 3.6
+    arch: arm64
+  - python: 3.7
+  - python: 3.7
+    arch: arm64
+  - python: 3.8
+  - python: 3.8
+    arch: arm64
+  - python: 3.8
+    services:
+    - docker
+    env:
+    - BUILD_SDIST=true
+    - BUILD_WHEEL=true
+  - python: 3.8
+    arch: arm64
+    services:
+    - docker
+    env: BUILD_WHEEL=true
+  - name: Python 3.6.9 on macOS
+    os: osx
+    language: objective-c
+    env: PYENV_VERSION=3.6.9
+    before_install:
+    install: "./.travis/install.sh"
+    script:
+      - "./.travis/run.sh"
+    after_success:
+  - name: Python 3.7.5 on macOS
+    os: osx
+    osx_image: xcode11.3
+    language: objective-c
+    env: PYENV_VERSION=3.7.5
+    before_install:
+    install: "./.travis/install.sh"
+    script:
+      - "./.travis/run.sh"
+    after_success:
+  - name: Python 3.8.0 on macOS
+    os: osx
+    osx_image: xcode11.3
+    language: objective-c
+    env: PYENV_VERSION=3.8.0
+    before_install:
+    install: "./.travis/install.sh"
+    script:
+      - "./.travis/run.sh"
+    after_success:
 
-notifications:
-  irc:
-    channels:
-      - "irc.freenode.org#code-hell"
-      - "irc.freenode.org#allieae"
-    on_success: change  # options: [always|never|change] default: always
-    on_failure: always  # options: [always|never|change] default: always
+#deploy:
+  #provider: releases
+  #file:
+  #- dist/*.whl
+  #- dist/*.tar.gz
+  #file_glob: true
+  #on:
+    #repo: simplejson/simplejson
+    #tags: true
+  #skip_cleanup: true
+  #api_key:
+    #secure: FhcBCuL/33fsotaDLv157pQ0HpxYAXI9h4TNhT0CDgrh1i2J1m/hmJMqlrrn0j/E2TpYyXf1citLra6QrBP//FnFMGQ43el369tC3W9RPXYpfThzU6JcJecoWGQMMMiJgPLpOC7+tyDpphsNFKmySG/ITvX+OEZ4lzL8+1CWyRk=
