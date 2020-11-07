@@ -264,7 +264,14 @@ class GitChangelogTest(BaseGitReposTest):
             self.assertNoDiff(self.REFERENCE, out)
 
     def test_same_output_with_different_engine(self):
-        """Reference implem should match mako implem"""
+        """Reference implem should match mustache and mako implem"""
+
+        gitchangelog.file_put_contents(
+            ".gitchangelog.rc",
+            "output_engine = mustache('restructuredtext')")
+        changelog = w('$tprog')
+        self.assertNoDiff(
+            self.REFERENCE, changelog)
 
         gitchangelog.file_put_contents(
             ".gitchangelog.rc",
@@ -273,7 +280,12 @@ class GitChangelogTest(BaseGitReposTest):
         self.assertNoDiff(self.REFERENCE, changelog)
 
     def test_same_output_with_different_engine_incr(self):
-        """Reference implem should match mako implem (incr)"""
+        """Reference implem should match mustache and mako implem (incr)"""
+
+        gitchangelog.file_put_contents(".gitchangelog.rc",
+                          "output_engine = mustache('restructuredtext')")
+        changelog = w('$tprog 0.0.2..0.0.3')
+        self.assertNoDiff(self.INCR_REFERENCE_002_003, changelog)
 
         gitchangelog.file_put_contents(".gitchangelog.rc",
                           "output_engine = makotemplate('restructuredtext')")
@@ -283,7 +295,8 @@ class GitChangelogTest(BaseGitReposTest):
     def test_provided_templates(self):
         """Run all provided templates at least once"""
 
-        for label, directory in [("makotemplate", "mako")]:
+        for label, directory in [("makotemplate", "mako"),
+                                 ("mustache", "mustache")]:
             template_dir = os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
                 "..", "templates", directory)

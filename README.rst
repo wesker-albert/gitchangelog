@@ -39,7 +39,7 @@ Feature
 - refactor commit summary, or commit body on the fly with replace regexp
 - classify commit message into sections (ie: New, Fix, Changes...)
 - any output format supported thanks to templating, you can even choose
-  your own preferred template engine (mako, full python ...).
+  your own preferred template engine (mako, mustache, full python ...).
 - support your merge or rebase workflows and complicated git histories
 - support full or incremental changelog generation to match your needs.
 - support easy access to `trailers key values`_ (if you use them)
@@ -53,7 +53,8 @@ Feature
 Requirements
 ============
 
-``gitchangelog`` is compatible with Python 3 on Linux/BSD/MacOSX and Windows.
+``gitchangelog`` is compatible with Python 2.7 and Python 3 on
+Linux/BSD/MacOSX and Windows.
 
 Please submit an issue if you encounter incompatibilities.
 
@@ -78,7 +79,7 @@ The full package provides the ``gitchangelog.py`` executable as well as:
 
 - a `reference configuration file`_ that provides system wide defaults for
   all values.
-- some example templates in the ``mako`` templating engine language.
+- some example templates in the ``mustache`` and ``mako`` templating engine language.
   Ideal to bootstrap your variations.
 
 
@@ -263,10 +264,52 @@ To render the template, ``gitchangelog`` will generate a data structure that
 will then be rendered thanks to the output engine. This should help you get
 the exact output that you need.
 
+As people might have different needs and knowledge, a templating
+system using ``mustache`` is available. ``mustache`` templates are
+provided to render both `ReSTructured Text` or `markdown` formats. If
+you know ``mustache`` templating, then you could easily add or modify
+these existing templates.
+
 A ``mako`` templating engine is also provided. You'll find also a ``mako``
 template producing the same `ReSTructured Text` output than the legacy one.
 It's provided for reference and/or further tweak if you would rather use `mako`_
 templates.
+
+
+Mustache
+~~~~~~~~
+
+The ``mustache``  output engine uses `mustache templates`_.
+
+The `mustache`_ templates are powered via `pystache`_ the python
+implementation of the `mustache`_ specifications. So `mustache`_ output engine
+will only be available if you have `pystache`_ module available in your python
+environment.
+
+There are `mustache templates`_ bundled with the default installation
+of gitchangelog. These can be called by providing a simple label to the
+``mustache(..)`` output_engine, for instance (in your ``.gitchangelog.rc``)::
+
+    output_engine = mustache("markdown")
+
+Or you could provide your own mustache template by specifying an
+absolute path (or a relative one, starting from the git toplevel of
+your project by default, or if set, the
+``git config gitchangelog.template-path``
+location) to your template file, for instance::
+
+    output_engine = mustache(".gitchangelog.tpl")
+
+And feel free to copy the bundled templates to use them as bases for
+your own variations. In the source code, these are located in
+``src/gitchangelog/templates/mustache`` directory, once installed they
+are in ``templates/mustache`` directory starting from where your
+``gitchangelog.py`` was installed.
+
+
+.. _mustache: http://mustache.github.io
+.. _pystache: https://pypi.python.org/pypi/pystache
+.. _mustache templates: http://mustache.github.io/mustache.5.html
 
 
 Mako
@@ -510,6 +553,38 @@ generated and need a re-fresh because you added new commits or amended some comm
     ]
 
     publish = FileRegexSubst(OUTPUT_FILE, INSERT_POINT_REGEX, r"\1\o\g<rev>")
+
+
+As a second example, here is the same recipe for mustache markdown format::
+
+    OUTPUT_FILE = "CHANGELOG.rst"
+    INSERT_POINT_REGEX = r'''(?isxu)
+    ^
+    (
+      \s*\#\s+Changelog\s*(\n|\r\n|\r)        ## ``Changelog`` line
+    )
+
+    (                     ## Match all between changelog and release rev
+        (
+          (?!
+             (?<=(\n|\r))                ## look back for newline
+             \#\#\s+%(rev)s                     ## revision
+             \s+
+             \([0-9]+-[0-9]{2}-[0-9]{2}\)(\n|\r\n|\r)   ## date
+          )
+          .
+        )*
+    )
+
+    (?P<tail>\#\#\s+(?P<rev>%(rev)s))
+    ''' % {'rev': r"[0-9]+\.[0-9]+(\.[0-9]+)?"}
+
+    revs = [
+        Caret(FileFirstRegexMatch(OUTPUT_FILE, INSERT_POINT_REGEX)),
+        "HEAD"
+    ]
+
+    publish = FileRegexSubst(OUTPUT_FILE, INSERT_POINT_REGEX, r"\1\o\n\g<tail>")
 
 
 Contributing
