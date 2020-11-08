@@ -137,6 +137,15 @@ unreleased_version_label = "(unreleased)"
 ##        Legacy pure python engine, outputs ReSTructured text.
 ##        This is the default.
 ##
+##   - mustache(<template_name>)
+##
+##        Template name could be any of the available templates in
+##        ``templates/mustache/*.tpl``.
+##        Requires python package ``pystache``.
+##        Examples:
+##           - mustache("markdown")
+##           - mustache("restructuredtext")
+##
 ##   - makotemplate(<template_name>)
 ##
 ##        Template name could be any of the available templates in
@@ -146,6 +155,8 @@ unreleased_version_label = "(unreleased)"
 ##           - makotemplate("restructuredtext")
 ##
 output_engine = rest_py
+#output_engine = mustache("restructuredtext")
+#output_engine = mustache("markdown")
 #output_engine = makotemplate("restructuredtext")
 
 
