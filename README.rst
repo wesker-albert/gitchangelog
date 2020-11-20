@@ -10,9 +10,9 @@ gitchangelog
     :target: https://github.com/freepn/gitchangelog/releases
     :alt: GitHub tag (latest SemVer, including pre-release)
 
-.. image:: https://travis-ci.com/freepn/gitchangelog.svg?branch=master
-    :target: https://travis-ci.com/freepn/gitchangelog
-    :alt: Travis CI build status
+.. image:: https://img.shields.io/github/workflow/status/freepn/gitchangelog/ci
+    :target: https://github.com/freepn/gitchangelog/actions?query=workflow:ci
+    :alt: GitHub CI Workflow Status
 
 .. image:: https://ci.appveyor.com/api/projects/status/github/freepn/gitchangelog?svg=true
     :target: https://ci.appveyor.com/project/freepn/gitchangelog/branch/master
