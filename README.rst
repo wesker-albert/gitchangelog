@@ -29,9 +29,14 @@ gitchangelog
 
 Use your commit log to make beautiful and configurable changelog file.
 
+..note:: This fork of gitchangelog now requires the revived/updated pystache
+         repo `available here`_.
 
-Feature
-=======
+.. _available here: https://github.com/sarnold/pystache
+
+
+Features
+========
 
 - fully driven by a config file that can be tailored with your changelog
   policies. (see for example the `reference configuration file`_)
@@ -54,7 +59,7 @@ Requirements
 ============
 
 ``gitchangelog`` is compatible with Python 2.7 and Python 3 on
-Linux/BSD/MacOSX and Windows.
+Linux/BSD/MacOSX and Windows (the CI tests run on everything except BSD).
 
 Please submit an issue if you encounter incompatibilities.
 
