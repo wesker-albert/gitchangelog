@@ -26,10 +26,12 @@ jobs:
         python-version: [2.7, 3.5, 3.6, 3.7, 3.8, 3.9]
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     - uses: msys2/setup-msys2@v2
       with:
         msystem: MSYS
-        install: git base-devel
+        install: git gettext-devel intltool libiconv-devel
         update: true
       if: ${{ matrix.os == 'windows-latest' }}
     - name: Set up Python ${{ matrix.python-version }}
