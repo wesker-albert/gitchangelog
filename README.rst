@@ -29,8 +29,9 @@ gitchangelog
 
 Use your commit log to make beautiful and configurable changelog file.
 
-..note:: This fork of gitchangelog now requires the revived/updated pystache
-         repo `available here`_.
+
+.. note:: This fork of gitchangelog now requires the revived/updated pystache
+          repo `available here`_.
 
 .. _available here: https://github.com/sarnold/pystache
 
