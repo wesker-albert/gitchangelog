@@ -106,7 +106,7 @@ source. This can be a convenient way to work on the source version.
 
 The alternative to python venv is the ``tox`` test driver.  If you have it
 installed already, use the following commands to run the test environments
-from the gitchangelog source directory::
+from the gitchangelog source directory.
 
 To run tests::
 
