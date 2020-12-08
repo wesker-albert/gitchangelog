@@ -73,6 +73,8 @@ jobs:
           name: wheels
 
       - name: Generate changes file
+        env:
+          GITCHANGELOG_CONFIG_FILENAME: "src/gitchangelog/gitchangelog.rc.github.release"
         run: |
           bash -c './gitchangelog $(git tag -l | tail -n2 | head -n1)..${{ env.VERSION }} > CHANGES.md'
 
