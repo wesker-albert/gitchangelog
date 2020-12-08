@@ -480,8 +480,8 @@ Here is an example that fits the current changelog format::
     revs = [
         Caret(
             FileFirstRegexMatch(
-    	        "CHANGELOG.rst",
-    	        r"(?P<rev>[0-9]+\.[0-9]+(\.[0-9]+))\s+\([0-9]+-[0-9]{2}-[0-9]{2}\)\n--+\n")),
+                "CHANGELOG.rst",
+                r"(?P<rev>[0-9]+\.[0-9]+(\.[0-9]+))\s+\([0-9]+-[0-9]{2}-[0-9]{2}\)\n--+\n")),
     ]
 
 This will look into the file ``CHANGELOG.rst`` for the first match of
