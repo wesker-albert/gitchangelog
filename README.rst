@@ -72,9 +72,9 @@ Installation
 full package
 ------------
 
-Gitchangelog is published on PyPI, thus::
+The updated gitchangelog is *not* published on PyPI, thus::
 
-  $ pip install gitchangelog
+  $ pip install git+https://github.com/freepn/gitchangelog@3.0.4-4
 
 \.. is the way to go to install the full package on any platform.
 
