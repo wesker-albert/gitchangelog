@@ -1,5 +1,15 @@
 #!/usr/bin/env python
 
+"""
+Get the path to gitchangelog.rc.github.release and print it to stdout.
+This is mainly intended for use in CI automation environments; it looks
+for an environment variable named ``pythonLocation`` that points to the
+root of the active Python environment in the GitHub action runners. This
+config is intended for automated release change data in a release action
+on Linux only.
+
+"""
+
 import os, fnmatch
 
 

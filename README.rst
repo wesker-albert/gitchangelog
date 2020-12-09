@@ -41,6 +41,8 @@ Features
 
 - fully driven by a config file that can be tailored with your changelog
   policies. (see for example the `reference configuration file`_)
+- default github release action Markdown config and ``get-rcpath`` script
+  to find it (see the `gitchangelog.rc.github.release file`_)
 - filter out commits/tags based on regexp matching
 - refactor commit summary, or commit body on the fly with replace regexp
 - classify commit message into sections (ie: New, Fix, Changes...)
@@ -53,6 +55,7 @@ Features
 - support standard python installation or dep-free single executable.
   (this last feature is not yet completely pain free to use on Windows)
 
+.. _gitchangelog.rc.github.release file: https://github.com/freepn/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.github.release
 .. _trailers key values: https://git.wiki.kernel.org/index.php/CommitMessageConventions
 
 
@@ -72,9 +75,9 @@ Installation
 full package
 ------------
 
-Gitchangelog is published on PyPI, thus::
+The updated gitchangelog is *not* published on PyPI, thus::
 
-  $ pip install gitchangelog
+  $ pip install git+https://github.com/freepn/gitchangelog@3.0.4-4
 
 \.. is the way to go to install the full package on any platform.
 
