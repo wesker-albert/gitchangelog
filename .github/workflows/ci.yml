@@ -17,38 +17,41 @@ jobs:
       run:
         shell: bash
     env:
-      TZ: CI
-      LC_ALL: C.UTF-8
-      LESSCHARSET: utf-8
+      PYTHONIOENCODING: utf-8
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: [2.7, 3.5, 3.6, 3.7, 3.8, 3.9]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.6, 3.7, 3.8, 3.9]
         exclude:
           - os: windows-latest
             python-version: 2.7
+
     steps:
-    - name: Set git crlf/eol/utf-8
+    - name: Set git crlf/eol
       run: |
+        echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
         git config --global core.autocrlf false
         git config --global core.eol lf
-        git config --global i18n.logOutputEncoding utf-8
-        git config --global core.pager 'less --raw-control-chars'
+
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip wheel
-        pip install tox coverage
+        pip install tox tox-gh-actions codecov
+
     - name: Test with tox
       run: |
         tox -e py
+
     - name: Installable
       run: |
         pip install .

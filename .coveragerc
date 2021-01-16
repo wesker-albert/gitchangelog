@@ -1,4 +1,8 @@
 # .coveragerc to control coverage.py
+#[paths]
+#source =
+#    src/gitchangelog
+
 [run]
 branch = True
 
@@ -20,5 +24,6 @@ exclude_lines =
     if 0:
 
 ignore_errors = True
+
 [html]
 directory = cover
