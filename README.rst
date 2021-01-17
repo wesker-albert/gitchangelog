@@ -14,10 +14,6 @@ gitchangelog
     :target: https://github.com/freepn/gitchangelog/actions?query=workflow:ci
     :alt: GitHub CI Workflow Status
 
-.. image:: https://ci.appveyor.com/api/projects/status/github/freepn/gitchangelog?svg=true
-    :target: https://ci.appveyor.com/project/freepn/gitchangelog/branch/master
-    :alt: Appveyor CI build status
-
 .. image:: https://img.shields.io/codecov/c/github/freepn/gitchangelog
     :target: https://codecov.io/gh/freepn/gitchangelog
     :alt: Codecov test coverage
@@ -62,7 +58,7 @@ Features
 Requirements
 ============
 
-``gitchangelog`` is compatible with Python 2.7 and Python 3 on
+``gitchangelog`` is compatible with Python 3.6 and higher on
 Linux/BSD/MacOSX and Windows (the CI tests run on everything except BSD).
 
 Please submit an issue if you encounter incompatibilities.
@@ -77,7 +73,7 @@ full package
 
 The updated gitchangelog is *not* published on PyPI, thus::
 
-  $ pip install git+https://github.com/freepn/gitchangelog@3.0.4-4
+  $ pip install git+https://github.com/freepn/gitchangelog@3.0.5
 
 \.. is the way to go to install the full package on any platform.
 
