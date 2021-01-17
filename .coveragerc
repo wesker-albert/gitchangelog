@@ -3,6 +3,9 @@
 branch = True
 
 [report]
+# must set this to True to see missing
+#show_missing = True
+
 # Regexes for lines to exclude from consideration
 exclude_lines =
     # Have to re-enable the standard pragma
@@ -20,5 +23,6 @@ exclude_lines =
     if 0:
 
 ignore_errors = True
+
 [html]
 directory = cover
