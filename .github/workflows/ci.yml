@@ -30,7 +30,6 @@ jobs:
     steps:
     - name: Set git crlf/eol
       run: |
-        echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
         git config --global core.autocrlf false
         git config --global core.eol lf
 

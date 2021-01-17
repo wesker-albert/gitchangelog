@@ -1,12 +1,11 @@
 # .coveragerc to control coverage.py
-#[paths]
-#source =
-#    src/gitchangelog
-
 [run]
 branch = True
 
 [report]
+# must set this to True to see missing
+#show_missing = True
+
 # Regexes for lines to exclude from consideration
 exclude_lines =
     # Have to re-enable the standard pragma
