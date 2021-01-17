@@ -55,3 +55,7 @@ jobs:
       run: |
         pip install .
         gitchangelog HEAD^^..HEAD
+
+    - name: Build dist pkgs
+      run: |
+        tox -e deploy
