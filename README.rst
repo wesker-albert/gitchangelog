@@ -77,13 +77,11 @@ The updated gitchangelog is *not* published on PyPI, thus::
 
 \.. is the way to go to install the full package on any platform.
 
-If you are installing from source, please note that the development tools
-are not working fully yet on Windows.
 
 The full package provides the ``gitchangelog.py`` executable as well as:
 
 - a `reference configuration file`_ that provides system wide defaults for
-  all values.
+  all values, and a `github.release file`_ for use in CI scripts
 - some example templates in the ``mustache`` and ``mako`` templating engine language.
   Ideal to bootstrap your variations.
 
@@ -249,6 +247,7 @@ The `reference configuration file`_ is quite heavily commented and is quite
 simple.  You should be able to use it as required.
 
 .. _reference configuration file: https://github.com/freepn/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.reference
+.. _github.release file: https://github.com/freepn/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.github.release
 
 The changelog of gitchangelog is generated with himself and with the reference
 configuration file. You'll see the output in the `changelog of the PyPI page`_.
