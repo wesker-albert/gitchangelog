@@ -3,23 +3,23 @@ gitchangelog
 ============
 
 .. image:: https://img.shields.io/pypi/l/gitchangelog?color=green
-    :target: https://github.com/freepn/gitchangelog/blob/master/LICENSE
+    :target: https://github.com/sarnold/gitchangelog/blob/master/LICENSE
     :alt: PyPI - License
 
-.. image:: https://img.shields.io/github/v/tag/freepn/gitchangelog?color=green&include_prereleases&label=latest%20release
-    :target: https://github.com/freepn/gitchangelog/releases
+.. image:: https://img.shields.io/github/v/tag/sarnold/gitchangelog?color=green&include_prereleases&label=latest%20release
+    :target: https://github.com/sarnold/gitchangelog/releases
     :alt: GitHub tag (latest SemVer, including pre-release)
 
-.. image:: https://img.shields.io/github/workflow/status/freepn/gitchangelog/ci
-    :target: https://github.com/freepn/gitchangelog/actions?query=workflow:ci
+.. image:: https://img.shields.io/github/workflow/status/sarnold/gitchangelog/ci
+    :target: https://github.com/sarnold/gitchangelog/actions?query=workflow:ci
     :alt: GitHub CI Workflow Status
 
-.. image:: https://img.shields.io/codecov/c/github/freepn/gitchangelog
-    :target: https://codecov.io/gh/freepn/gitchangelog
+.. image:: https://img.shields.io/codecov/c/github/sarnold/gitchangelog
+    :target: https://codecov.io/gh/sarnold/gitchangelog
     :alt: Codecov test coverage
 
-.. image:: https://img.shields.io/codeclimate/maintainability/freepn/gitchangelog
-    :target: https://codeclimate.com/github/freepn/gitchangelog
+.. image:: https://img.shields.io/codeclimate/maintainability/sarnold/gitchangelog
+    :target: https://codeclimate.com/github/sarnold/gitchangelog
     :alt: Code Climate rating
 
 
@@ -51,7 +51,7 @@ Features
 - support standard python installation or dep-free single executable.
   (this last feature is not yet completely pain free to use on Windows)
 
-.. _gitchangelog.rc.github.release file: https://github.com/freepn/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.github.release
+.. _gitchangelog.rc.github.release file: https://github.com/sarnold/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.github.release
 .. _trailers key values: https://git.wiki.kernel.org/index.php/CommitMessageConventions
 
 
@@ -73,7 +73,7 @@ full package
 
 The updated gitchangelog is *not* published on PyPI, thus::
 
-  $ pip install git+https://github.com/freepn/gitchangelog@3.0.5
+  $ pip install git+https://github.com/sarnold/gitchangelog@3.0.5
 
 \.. is the way to go to install the full package on any platform.
 
@@ -121,7 +121,7 @@ The file ``gitchangelog.py`` is a full blown executable and can be used
 without any other files. This is easier to use naturally on Linux/BSD
 systems. For instance, you could type in::
 
-  $ curl -sSL https://raw.githubusercontent.com/freepn/gitchangelog/master/src/gitchangelog/gitchangelog.py > /usr/local/bin/gitchangelog &&
+  $ curl -sSL https://raw.githubusercontent.com/sarnold/gitchangelog/master/src/gitchangelog/gitchangelog.py > /usr/local/bin/gitchangelog &&
   $ chmod +x /usr/local/bin/gitchangelog
 
 It'll install ``gitchangelog`` to be accessible for all users and will
@@ -246,8 +246,8 @@ Configuration file format
 The `reference configuration file`_ is quite heavily commented and is quite
 simple.  You should be able to use it as required.
 
-.. _reference configuration file: https://github.com/freepn/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.reference
-.. _github.release file: https://github.com/freepn/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.github.release
+.. _reference configuration file: https://github.com/sarnold/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.reference
+.. _github.release file: https://github.com/sarnold/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.github.release
 
 The changelog of gitchangelog is generated with himself and with the reference
 configuration file. You'll see the output in the `changelog of the PyPI page`_.
@@ -632,4 +632,4 @@ Copyright (c) 2012-2018 Valentin Lab.
 
 Licensed under the `BSD License`_.
 
-.. _BSD License: http://raw.github.com/freepn/gitchangelog/master/LICENSE
+.. _BSD License: http://raw.github.com/sarnold/gitchangelog/master/LICENSE
