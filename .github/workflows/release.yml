@@ -74,7 +74,7 @@ jobs:
       - uses: actions/download-artifact@v2
 
       - name: Generate changes file
-        uses: sarnold/gitchangelog-action@master
+        uses: sarnold/gitchangelog-action@cfg-fix
         with:
           github_token: ${{ secrets.GITHUB_TOKEN}}
 
