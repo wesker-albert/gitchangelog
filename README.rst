@@ -23,7 +23,7 @@ gitchangelog
     :alt: Code Climate rating
 
 
-**Use your commit log to make beautiful and configurable changelog file.**
+**Use your commit log to make a beautiful and configurable changelog file.**
 
 
 .. note:: This fork of gitchangelog now requires the revived/updated pystache

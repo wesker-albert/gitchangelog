@@ -876,7 +876,7 @@ class GitCommit(SubGitObjectMixin):
             except ShellError:
                 if DEBUG:
                     raise
-                raise ValueError("Given commit identifier %r doesn't exists"
+                raise ValueError("Given commit identifier %r does not exist"
                                  % self.identifier)
             attr_values = ret.split("\x00")
             for attr, value in zip(missing_attrs, attr_values):
@@ -1931,9 +1931,9 @@ def main():
         if changelogrc:
             if not os.path.exists(changelogrc):
                 if enforce_file_existence:
-                    die("File %r does not exists." % changelogrc)
+                    die("File %r does not exist." % changelogrc)
                 else:
-                    continue  ## changelogrc valued, but file does not exists
+                    continue  ## changelogrc valued, but file does not exist
             else:
                 break
 
