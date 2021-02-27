@@ -2,6 +2,11 @@
 [run]
 branch = True
 
+source = gitchangelog
+
+plugins =
+    coverage_python_version
+
 [report]
 # must set this to True to see missing
 #show_missing = True
