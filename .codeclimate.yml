@@ -9,16 +9,16 @@ version: "2"         # required to adjust maintainability checks
 checks:
   argument-count:
     config:
-      threshold: 4
+      threshold: 10
   complex-logic:
     config:
       threshold: 4
   file-lines:
     config:
-      threshold: 250
+      threshold: 1000
   method-complexity:
     config:
-      threshold: 18
+      threshold: 25
   method-count:
     config:
       threshold: 20
