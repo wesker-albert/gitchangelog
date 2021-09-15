@@ -2,25 +2,11 @@
 gitchangelog
 ============
 
-.. image:: https://img.shields.io/pypi/l/gitchangelog?color=green
-    :target: https://github.com/sarnold/gitchangelog/blob/master/LICENSE
-    :alt: PyPI - License
+|ci| |release|
 
-.. image:: https://img.shields.io/github/v/tag/sarnold/gitchangelog?color=green&include_prereleases&label=latest%20release
-    :target: https://github.com/sarnold/gitchangelog/releases
-    :alt: GitHub tag (latest SemVer, including pre-release)
+|cov| |quality|
 
-.. image:: https://img.shields.io/github/workflow/status/sarnold/gitchangelog/ci
-    :target: https://github.com/sarnold/gitchangelog/actions?query=workflow:ci
-    :alt: GitHub CI Workflow Status
-
-.. image:: https://img.shields.io/codecov/c/github/sarnold/gitchangelog
-    :target: https://codecov.io/gh/sarnold/gitchangelog
-    :alt: Codecov test coverage
-
-.. image:: https://img.shields.io/codeclimate/maintainability/sarnold/gitchangelog
-    :target: https://codeclimate.com/github/sarnold/gitchangelog
-    :alt: Code Climate rating
+|tag| |license| |python|
 
 
 **Use your commit log to make a beautiful and configurable changelog file.**
@@ -638,3 +624,32 @@ Copyright (c) 2012-2018 Valentin Lab.
 Licensed under the `BSD License`_.
 
 .. _BSD License: http://raw.github.com/sarnold/gitchangelog/master/LICENSE
+
+
+.. |license| image:: https://img.shields.io/pypi/l/gitchangelog?color=green
+    :target: https://github.com/sarnold/gitchangelog/blob/master/LICENSE
+    :alt: License
+
+.. |tag| image:: https://img.shields.io/github/v/tag/sarnold/gitchangelog?color=green&include_prereleases&label=latest%20release
+    :target: https://github.com/sarnold/gitchangelog/releases
+    :alt: GitHub tag (latest SemVer, including pre-release)
+
+.. |ci| image:: https://github.com/sarnold/gitchangelog/actions/workflows/ci.yml/badge.svg
+    :target: https://github.com/sarnold/gitchangelog/actions/workflows/ci.yml
+    :alt: CI Workflow Status
+
+.. |release| image:: https://github.com/sarnold/gitchangelog/actions/workflows/release.yml/badge.svg
+    :target: https://github.com/sarnold/gitchangelog/actions/workflows/release.yml
+    :alt: Release Workflow Status
+
+.. |cov| image:: https://img.shields.io/codecov/c/github/sarnold/gitchangelog
+    :target: https://codecov.io/gh/sarnold/gitchangelog
+    :alt: Test coverage
+
+.. |quality| image:: https://img.shields.io/codeclimate/maintainability/sarnold/gitchangelog
+    :target: https://codeclimate.com/github/sarnold/gitchangelog
+    :alt: Code Climate rating
+
+.. |python| image:: https://img.shields.io/badge/python-3.6+-blue.svg
+    :target: https://www.python.org/downloads/
+    :alt: Python

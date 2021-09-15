@@ -1,7 +1,7 @@
 # still having msys git character encoding failure on test_get_commit
 # this rev is *almost* correct on windows-latest, but not quite...
 
-name: ci
+name: Build
 
 on:
   push:
