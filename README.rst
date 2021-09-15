@@ -626,11 +626,11 @@ Licensed under the `BSD License`_.
 .. _BSD License: http://raw.github.com/sarnold/gitchangelog/master/LICENSE
 
 
-.. |license| image:: https://img.shields.io/pypi/l/gitchangelog?color=green
+.. |license| image:: https://img.shields.io/pypi/l/gitchangelog?color=blue
     :target: https://github.com/sarnold/gitchangelog/blob/master/LICENSE
     :alt: License
 
-.. |tag| image:: https://img.shields.io/github/v/tag/sarnold/gitchangelog?color=green&include_prereleases&label=latest%20release
+.. |tag| image:: https://img.shields.io/github/v/tag/sarnold/gitchangelog?color=blue&include_prereleases&label=latest%20release
     :target: https://github.com/sarnold/gitchangelog/releases
     :alt: GitHub tag (latest SemVer, including pre-release)
 
@@ -642,11 +642,11 @@ Licensed under the `BSD License`_.
     :target: https://github.com/sarnold/gitchangelog/actions/workflows/release.yml
     :alt: Release Workflow Status
 
-.. |cov| image:: https://img.shields.io/codecov/c/github/sarnold/gitchangelog?color=blue
+.. |cov| image:: https://img.shields.io/codecov/c/github/sarnold/gitchangelog
     :target: https://codecov.io/gh/sarnold/gitchangelog
     :alt: Test coverage
 
-.. |quality| image:: https://img.shields.io/codeclimate/maintainability/sarnold/gitchangelog?color=blue
+.. |quality| image:: https://img.shields.io/codeclimate/maintainability/sarnold/gitchangelog
     :target: https://codeclimate.com/github/sarnold/gitchangelog
     :alt: Code Climate rating
 
