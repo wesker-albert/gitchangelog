@@ -3,7 +3,7 @@
 """
 Get the path to gitchangelog.rc.github.release and print it to stdout.
 Now uses pkg_resources and accepts one optional argument to return the
-referance .rc file instead of the release file.
+reference .rc file instead of the release file.
 """
 
 import sys
