@@ -642,11 +642,11 @@ Licensed under the `BSD License`_.
     :target: https://github.com/sarnold/gitchangelog/actions/workflows/release.yml
     :alt: Release Workflow Status
 
-.. |cov| image:: https://img.shields.io/codecov/c/github/sarnold/gitchangelog
+.. |cov| image:: https://img.shields.io/codecov/c/github/sarnold/gitchangelog?color=blue
     :target: https://codecov.io/gh/sarnold/gitchangelog
     :alt: Test coverage
 
-.. |quality| image:: https://img.shields.io/codeclimate/maintainability/sarnold/gitchangelog
+.. |quality| image:: https://img.shields.io/codeclimate/maintainability/sarnold/gitchangelog?color=blue
     :target: https://codeclimate.com/github/sarnold/gitchangelog
     :alt: Code Climate rating
 
