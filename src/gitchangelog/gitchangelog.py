@@ -32,8 +32,8 @@ except ImportError:  # pragma: no cover
 
 # this accepts a git tag with a 'pN' suffix (as a patch/post release tag) and
 # returns a PEP 440 '-N' that normalizes to a .post version for python
-# __version__ = '3.0.4p1'.replace('p', '-')
-__version__ = '3.0.7'
+#__version__ = '3.0.4p1'.replace('p', '-')
+__version__ = '3.0.8'
 
 DEBUG = None
 
@@ -233,12 +233,12 @@ usage_msg = """
   %(exname)s [--debug|-d] [REVLIST]"""
 
 description_msg = """\
-Run this command in a git repository to output a formatted changelog
+Run this command in a git repository to output a formatted changelog.
 """
 
 epilog_msg = """\
-%(exname)s uses a config file to filter meaningful commit or do some
-formatting in commit messages thanks to a config file.
+%(exname)s uses a config file to filter meaningful commits or do some
+formatting in commit messages.
 
 Config file location will be resolved in this order:
   - in shell environment variable GITCHANGELOG_CONFIG_FILENAME
