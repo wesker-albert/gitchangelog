@@ -13,9 +13,8 @@ gitchangelog
 
 
 .. note:: The updated version of gitchangelog works best with the updated
-          pystache version `available here`_ (thought it should also ""work"
-          with the last release on pypi).  Please file a github issue here if
-          you encounter any problems.
+          pystache version `available here`_  (as well as on pypi now).
+          Please file a github issue here if you encounter any problems.
 
 .. _available here: https://github.com/sarnold/pystache
 
@@ -122,7 +121,7 @@ use the default python interpreter of your running session.
 Please note: if you choose to install it in this standalone mode, then
 you must make sure to value at least all the required configuration
 keys in your config file. As a good start you should probably copy the
-`reference configuration file`_ as you base configuration file.
+`reference configuration file`_ as your base configuration file.
 
 This is due to the fact that ``gitchangelog`` can not anymore reach
 the reference configuration file to get default values.
