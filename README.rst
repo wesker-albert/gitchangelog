@@ -87,7 +87,7 @@ idiom to install it on your system in a virtual env::
   $ python3 -m venv env
   $ source env/bin/activate
   $ pip install -e .[test]
-  $ nosetests -sx .
+  $ pytest -v .
   $ deactivate
 
 Note that for linux/BSD, there's a link to the executable in the root of the
@@ -99,7 +99,7 @@ from the gitchangelog source directory.
 
 To run tests::
 
-  $ tox
+  $ tox -e py
 
 To run pylint::
 
