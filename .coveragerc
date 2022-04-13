@@ -9,7 +9,8 @@ plugins =
 
 [report]
 # must set this to True to see missing
-#show_missing = True
+show_missing = True
+fail_under = 86
 
 # Regexes for lines to exclude from consideration
 exclude_lines =
