@@ -55,3 +55,23 @@ distance-dirty = "{next_version}.dev{distance}"
 
 [tool.versioningit.write]
 file = "src/gitchangelog/_version.py"
+
+[tool.black]
+line-length = 90
+skip-string-normalization = true
+include = '\.py$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | docs
+  | dist
+  | test
+)/
+'''
