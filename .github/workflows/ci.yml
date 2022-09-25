@@ -53,20 +53,13 @@ jobs:
       env:
         PLATFORM: ${{ matrix.os }}
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        env_vars: OS,PYTHON
-
     - name: Installable
       run: |
-        pip install .
-        gitchangelog --debug
-        gitchangelog --debug HEAD^^..HEAD
+        tox -e dev
 
     - name: Build dist pkgs
       run: |
-        tox -e deploy
+        tox -e build,check
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
@@ -85,5 +78,4 @@ jobs:
           name: wheels
           
       - name: Check number of downloaded artifacts
-        #run: .github/workflows/wheel-check.sh 16
         run: find . -name \*.whl

@@ -1,23 +1,23 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
-from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
-import locale
-import re
-import os
-import sys
-import glob
-import textwrap
-import datetime
+import argparse
 import collections
-import traceback
 import contextlib
-import itertools
+import datetime
 import errno
+import glob
+import itertools
+import locale
+import os
+import re
+import sys
+import textwrap
+import traceback
+from subprocess import PIPE, Popen
 
-from subprocess import Popen, PIPE
+import pkg_resources
 
 try:
     import pystache
@@ -26,16 +26,9 @@ except ImportError:  # pragma: no cover
 
 try:
     import mako
+    import mako.template
 except ImportError:  # pragma: no cover
     mako = None
-
-
-# this accepts a git tag with a 'pN' suffix (as a patch/post release tag) and
-# returns a PEP 440 '-N' that normalizes to a .post version for python
-#__version__ = '3.0.4p1'.replace('p', '-')
-__version__ = '3.0.9'
-
-DEBUG = None
 
 
 ##
@@ -44,11 +37,7 @@ DEBUG = None
 
 PY_VERSION = float("%d.%d" % sys.version_info[0:2])
 PY3 = PY_VERSION >= 3
-
-try:
-    basestring
-except NameError:
-    basestring = str  # pylint: disable=redefined-builtin
+DEFAULT_ENCODING = 'utf-8'
 
 WIN32 = sys.platform == 'win32'
 if WIN32:
@@ -60,168 +49,6 @@ else:
         'close_fds': True,
     }
 
-##
-##
-##
-
-if WIN32 and not PY3:  # pragma: PY2
-
-    ## Sorry about the following, all this code is to ensure full
-    ## compatibility with python 2.7 under windows about sending unicode
-    ## command-line
-
-    import ctypes
-    import subprocess
-    import _subprocess
-    from ctypes import byref, windll, c_char_p, c_wchar_p, c_void_p, \
-         Structure, sizeof, c_wchar, WinError
-    from ctypes.wintypes import BYTE, WORD, LPWSTR, BOOL, DWORD, LPVOID, \
-         HANDLE
-
-
-    ##
-    ## Types
-    ##
-
-    CREATE_UNICODE_ENVIRONMENT = 0x00000400
-    LPCTSTR = c_char_p
-    LPTSTR = c_wchar_p
-    LPSECURITY_ATTRIBUTES = c_void_p
-    LPBYTE  = ctypes.POINTER(BYTE)
-
-    class STARTUPINFOW(Structure):
-        _fields_ = [
-            ("cb",              DWORD),  ("lpReserved",    LPWSTR),
-            ("lpDesktop",       LPWSTR), ("lpTitle",       LPWSTR),
-            ("dwX",             DWORD),  ("dwY",           DWORD),
-            ("dwXSize",         DWORD),  ("dwYSize",       DWORD),
-            ("dwXCountChars",   DWORD),  ("dwYCountChars", DWORD),
-            ("dwFillAtrribute", DWORD),  ("dwFlags",       DWORD),
-            ("wShowWindow",     WORD),   ("cbReserved2",   WORD),
-            ("lpReserved2",     LPBYTE), ("hStdInput",     HANDLE),
-            ("hStdOutput",      HANDLE), ("hStdError",     HANDLE),
-        ]
-
-    LPSTARTUPINFOW = ctypes.POINTER(STARTUPINFOW)
-
-
-    class PROCESS_INFORMATION(Structure):
-        _fields_ = [
-            ("hProcess",         HANDLE), ("hThread",          HANDLE),
-            ("dwProcessId",      DWORD),  ("dwThreadId",       DWORD),
-        ]
-
-    LPPROCESS_INFORMATION = ctypes.POINTER(PROCESS_INFORMATION)
-
-
-    class DUMMY_HANDLE(ctypes.c_void_p):
-
-        def __init__(self, *a, **kw):
-            super(DUMMY_HANDLE, self).__init__(*a, **kw)
-            self.closed = False
-
-        def Close(self):
-            if not self.closed:
-                windll.kernel32.CloseHandle(self)
-                self.closed = True
-
-        def __int__(self):
-            return self.value
-
-
-    CreateProcessW = windll.kernel32.CreateProcessW
-    CreateProcessW.argtypes = [
-        LPCTSTR, LPTSTR, LPSECURITY_ATTRIBUTES,
-        LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, LPCTSTR,
-        LPSTARTUPINFOW, LPPROCESS_INFORMATION,
-    ]
-    CreateProcessW.restype = BOOL
-
-
-    ##
-    ## Patched functions/classes
-    ##
-
-    def CreateProcess(executable, args, _p_attr, _t_attr,
-                      inherit_handles, creation_flags, env, cwd,
-                      startup_info):
-        """Create a process supporting unicode executable and args for win32
-
-        Python implementation of CreateProcess using CreateProcessW for Win32
-
-        """
-
-        si = STARTUPINFOW(
-            dwFlags=startup_info.dwFlags,
-            wShowWindow=startup_info.wShowWindow,
-            cb=sizeof(STARTUPINFOW),
-            ## XXXvlab: not sure of the casting here to ints.
-            hStdInput=int(startup_info.hStdInput),
-            hStdOutput=int(startup_info.hStdOutput),
-            hStdError=int(startup_info.hStdError),
-        )
-
-        wenv = None
-        if env is not None:
-            ## LPCWSTR seems to be c_wchar_p, so let's say CWSTR is c_wchar
-            env = (unicode("").join([
-                unicode("%s=%s\0") % (k, v)
-                for k, v in env.items()])) + unicode("\0")
-            wenv = (c_wchar * len(env))()
-            wenv.value = env
-
-        pi = PROCESS_INFORMATION()
-        creation_flags |= CREATE_UNICODE_ENVIRONMENT
-
-        if CreateProcessW(executable, args, None, None,
-                          inherit_handles, creation_flags,
-                          wenv, cwd, byref(si), byref(pi)):
-            return (DUMMY_HANDLE(pi.hProcess), DUMMY_HANDLE(pi.hThread),
-                    pi.dwProcessId, pi.dwThreadId)
-        raise WinError()
-
-
-    class Popen(subprocess.Popen):
-        """This superseeds Popen and corrects a bug in cPython 2.7 implem"""
-
-        def _execute_child(self, args, executable, preexec_fn, close_fds,
-                           cwd, env, universal_newlines,
-                           startupinfo, creationflags, shell, to_close,
-                           p2cread, p2cwrite,
-                           c2pread, c2pwrite,
-                           errread, errwrite):
-            """Code from part of _execute_child from Python 2.7 (9fbb65e)
-
-            There are only 2 little changes concerning the construction of
-            the the final string in shell mode: we preempt the creation of
-            the command string when shell is True, because original function
-            will try to encode unicode args which we want to avoid to be able to
-            sending it as-is to ``CreateProcess``.
-
-            """
-            if not isinstance(args, subprocess.types.StringTypes):
-                args = subprocess.list2cmdline(args)
-
-            if startupinfo is None:
-                startupinfo = subprocess.STARTUPINFO()
-            if shell:
-                startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = _subprocess.SW_HIDE
-                comspec = os.environ.get("COMSPEC", unicode("cmd.exe"))
-                args = unicode('{} /c "{}"').format(comspec, args)
-                if (_subprocess.GetVersion() >= 0x80000000 or
-                        os.path.basename(comspec).lower() == "command.com"):
-                    w9xpopen = self._find_w9xpopen()
-                    args = unicode('"%s" %s') % (w9xpopen, args)
-                    creationflags |= _subprocess.CREATE_NEW_CONSOLE
-
-            super(Popen, self)._execute_child(args, executable,
-                preexec_fn, close_fds, cwd, env, universal_newlines,
-                startupinfo, creationflags, False, to_close, p2cread,
-                p2cwrite, c2pread, c2pwrite, errread, errwrite)
-
-    _subprocess.CreateProcess = CreateProcess
-
 
 ##
 ## Help and usage strings
@@ -229,7 +56,7 @@ if WIN32 and not PY3:  # pragma: PY2
 
 usage_msg = """
   %(exname)s {-h|--help}
-  %(exname)s {-v|--version}
+  %(exname)s {--version}
   %(exname)s [--debug|-d] [REVLIST]"""
 
 description_msg = """\
@@ -277,7 +104,7 @@ class ShellError(Exception):
         self.command = command
         self.out = out
         self.err = err
-        super(ShellError, self).__init__(msg)
+        super().__init__(msg)
 
 
 @contextlib.contextmanager
@@ -349,7 +176,7 @@ def load_config_file(filename, default_filename=None,
                 exec(code, config)  ## pylint: disable=exec-used
             except SyntaxError as e:
                 die('Syntax error in config file: %s\n%s'
-                    'File %s, line %i'
+                    'File %s, line %s'
                     % (str(e),
                        (indent(e.text.rstrip(), "  | ") + "\n")  if e.text else "",
                        e.filename, e.lineno))
@@ -365,7 +192,7 @@ def load_config_file(filename, default_filename=None,
 ##
 
 @available_in_config
-class TextProc(object):
+class TextProc:
 
     def __init__(self, fun):
         self.fun = fun
@@ -478,27 +305,14 @@ for _label in ("Indent", "Wrap", "ReSub", "noop", "final_dot",
 ##
 
 def file_get_contents(filename):
-    with open(filename) as f:
+    with open(filename, encoding=DEFAULT_ENCODING) as f:
         out = f.read()
-    if not PY3:
-        if not isinstance(out, unicode):
-            out = out.decode(_preferred_encoding)
-        ## remove encoding declaration (for some reason, python 2.7
-        ## don't like it).
-        out = re.sub(r"^(\s*#.*\s*)coding[:=]\s*([-\w.]+\s*;?\s*)",
-                     r"\1", out, re.DOTALL)
-
     return out
 
 
 def file_put_contents(filename, string):
     """Write string to filename."""
-    if PY3:
-        fopen = open(filename, 'w', newline='')
-    else:
-        fopen = open(filename, 'wb')
-
-    with fopen as f:
+    with open(filename, 'w', newline='', encoding=DEFAULT_ENCODING) as f:
         f.write(string)
 
 
@@ -557,7 +371,7 @@ _preferred_encoding = os.environ.get("PYTHONIOENCODING") or \
 DEFAULT_GIT_LOG_ENCODING = 'utf-8'
 
 
-class Phile(object):
+class Phile:
     """File like API to read fields separated by any delimiters
 
     It'll take care of file decoding to unicode.
@@ -607,9 +421,8 @@ class Phile(object):
 
     def read(self, delimiter="\n"):
         buf = ""
-        if PY3:
-            delimiter = delimiter.encode(_preferred_encoding)
-            buf = buf.encode(_preferred_encoding)
+        delimiter = delimiter.encode(_preferred_encoding)
+        buf = buf.encode(_preferred_encoding)
         while True:
             chunk = self._file.read(self._buffersize)
             if not chunk:
@@ -622,8 +435,7 @@ class Phile(object):
             buf = records[-1]
 
     def write(self, buf):
-        if PY3:
-            buf = buf.encode(self._encoding)
+        buf = buf.encode(self._encoding)
         return self._file.write(buf)
 
     def close(self):
@@ -633,7 +445,7 @@ class Phile(object):
 class Proc(Popen):
 
     def __init__(self, command, env=None, encoding=_preferred_encoding):
-        super(Proc, self).__init__(
+        super().__init__(
             command, shell=True,
             stdin=PIPE, stdout=PIPE, stderr=PIPE,
             close_fds=PLT_CFG['close_fds'], env=env,
@@ -646,11 +458,12 @@ class Proc(Popen):
 
 def cmd(command, env=None, shell=True):
 
-    p = Popen(command, shell=shell,
-              stdin=PIPE, stdout=PIPE, stderr=PIPE,
-              close_fds=PLT_CFG['close_fds'], env=env,
-              universal_newlines=False)
-    out, err = p.communicate()
+    with Popen(command, shell=shell,
+               stdin=PIPE, stdout=PIPE, stderr=PIPE,
+               close_fds=PLT_CFG['close_fds'], env=env,
+               universal_newlines=False) as p:
+        out, err = p.communicate()
+
     return (
         out.decode(getattr(sys.stdout, "encoding", None) or
                       _preferred_encoding),
@@ -660,7 +473,7 @@ def cmd(command, env=None, shell=True):
 
 
 @available_in_config
-def wrap(command, ignore_errlvls=[0], env=None, shell=True):
+def wrap(command, ignore_errlvls=[0], env=None, shell=True):  # pylint: disable=W0102
     """Wraps a shell command and casts an exception on unexpected errlvl
 
     >>> wrap('/tmp/lsdjflkjf') # doctest: +ELLIPSIS +IGNORE_EXCEPTION_DETAIL
@@ -715,7 +528,7 @@ def swrap(command, **kwargs):
 ## git information access
 ##
 
-class SubGitObjectMixin(object):
+class SubGitObjectMixin:
 
     def __init__(self, repos):
         self._repos = repos
@@ -848,7 +661,7 @@ class GitCommit(SubGitObjectMixin):
     """
 
     def __init__(self, repos, identifier):
-        super(GitCommit, self).__init__(repos)
+        super().__init__(repos)
         self.identifier = identifier
         self._trailer_parsed = False
 
@@ -858,9 +671,9 @@ class GitCommit(SubGitObjectMixin):
         if label not in attrs:
             try:
                 return self.__dict__[label]
-            except KeyError:
+            except KeyError as exc:
                 if self._trailer_parsed:
-                    raise AttributeError(label)
+                    raise AttributeError(label) from exc
 
         identifier = self.identifier
 
@@ -873,21 +686,21 @@ class GitCommit(SubGitObjectMixin):
             try:
                 ret = self.git.log([identifier, "--max-count=1",
                                    "--pretty=format:%s" % aformat, "--"])
-            except ShellError:
+            except ShellError as exc:
                 if DEBUG:
                     raise
                 raise ValueError("Given commit identifier %r does not exist"
-                                 % self.identifier)
+                                 % self.identifier) from exc
             attr_values = ret.split("\x00")
             for attr, value in zip(missing_attrs, attr_values):
                 setattr(self, attr, value.strip())
 
         ## Let's interpret RFC822-like header keys that could be in the body
-        match = re.search(REGEX_RFC822_POSTFIX, self.body)
+        match = re.search(REGEX_RFC822_POSTFIX, self.body)  # pylint: disable=E0203
         if match is not None:
             pos = match.start()
-            postfix = self.body[pos:]
-            self.body = self.body[:pos]
+            postfix = self.body[pos:]  # pylint: disable=E0203
+            self.body = self.body[:pos]  # pylint: disable=W0201
             for match in re.finditer(REGEX_RFC822_KEY_VALUE, postfix):
                 dct = match.groupdict()
                 key = dct["key"].replace("-", "_").lower()
@@ -941,7 +754,9 @@ class GitCommit(SubGitObjectMixin):
     @property
     def tagger_date_timestamp(self):
         if not self.has_annotated_tag:
-            raise ValueError("Can't access 'tagger_date_timestamp' on commit without annotated tag.")
+            raise ValueError(
+                "Can't access 'tagger_date_timestamp' on commit without annotated tag."
+            )
         tagger_date_utc = self.git.for_each_ref(
             'refs/tags/%s' % self.identifier, format='%(taggerdate:raw)')
         return tagger_date_utc.split(" ", 1)[0]
@@ -1062,16 +877,13 @@ class GitConfig(SubGitObjectMixin):
 
     """
 
-    def __init__(self, repos):
-        super(GitConfig, self).__init__(repos)
-
     def __getattr__(self, label):
         try:
             res = self.git.config(label)
         except ShellError as e:
             if e.errlvl == 1 and e.out == "":
                 raise AttributeError("key %r is not found in git config."
-                                     % label)
+                                     % label) from e
             raise
         return res
 
@@ -1081,8 +893,8 @@ class GitConfig(SubGitObjectMixin):
     def __getitem__(self, label):
         try:
             return getattr(self, label)
-        except AttributeError:
-            raise KeyError(label)
+        except AttributeError as e:
+            raise KeyError(label) from e
 
 
 class GitCmd(SubGitObjectMixin):
@@ -1095,7 +907,7 @@ class GitCmd(SubGitObjectMixin):
                 return swrap(command, **kwargs)
 
         def method(*args, **kwargs):
-            if (len(args) == 1 and not isinstance(args[0], basestring)):
+            if (len(args) == 1 and not isinstance(args[0], str)):
                 return dir_swrap(
                     ['git', label, ] + args[0],
                     shell=False,
@@ -1116,7 +928,7 @@ class GitCmd(SubGitObjectMixin):
         return method
 
 
-class GitRepos(object):
+class GitRepos:
 
     def __init__(self, path):
 
@@ -1127,21 +939,22 @@ class GitRepos(object):
         ## verify ``git`` command is accessible:
         try:
             self._git_version = self.git.version()
-        except ShellError:
+        except ShellError as e:
             if DEBUG:
                 raise
             raise EnvironmentError(
                 "Required ``git`` command not found or broken in $PATH. "
-                "(calling ``git version`` failed.)")
+                "(calling ``git version`` failed.)") from e
 
         ## verify that we are in a git repository
         try:
             self.git.remote()
-        except ShellError:
+        except ShellError as e:
             if DEBUG:
                 raise
             raise EnvironmentError(
-                "Not in a git repository. (calling ``git remote`` failed.)")
+                "Not in a git repository. (calling ``git remote`` failed.)"
+            ) from e
 
         self.bare = self.git.rev_parse(is_bare_repository=True) == "true"
         self.toplevel = (None if self.bare else
@@ -1195,7 +1008,7 @@ class GitRepos(object):
                       key=lambda x: int(x.committer_date_timestamp))
 
     def log(self, includes=["HEAD", ], excludes=[], include_merge=True,
-            encoding=_preferred_encoding):
+            encoding=_preferred_encoding):  # pylint: disable=W0102
         """Reverse chronological list of git repository's commits
 
         Note: rev lists can be GitCommit instance list or identifier list.
@@ -1215,10 +1028,10 @@ class GitRepos(object):
                        '--no-merges' if not include_merge else ''),
                     encoding=encoding)
         for ref in refs["includes"]:
-            plog.stdin.write("%s\n" % ref.sha1)
+            plog.stdin.write("%s\n" % ref.sha1)  # pylint: disable=E1101
 
         for ref in refs["excludes"]:
-            plog.stdin.write("^%s\n" % ref.sha1)
+            plog.stdin.write("^%s\n" % ref.sha1)  # pylint: disable=E1101
         plog.stdin.close()
 
         def mk_commit(dct):
@@ -1242,7 +1055,7 @@ class GitRepos(object):
             plog.stderr.close()
 
 
-def first_matching(section_regexps, string):
+def first_matching(section_regexps, string):  # pylint: disable=R1710
     for section, regexps in section_regexps:
         if regexps is None:
             return section
@@ -1251,7 +1064,7 @@ def first_matching(section_regexps, string):
                 return section
 
 
-def ensure_template_file_exists(label, template_name):
+def ensure_template_file_exists(label, template_name):  # pylint: disable=R1710
     """Return template file path given a label hint and the template name
 
     Template name can be either a filename with full path,
@@ -1330,7 +1143,7 @@ def rest_py(data, opts={}):
                 s += render_commit(commit)
         return s
 
-    def render_commit(commit, opts=opts):
+    def render_commit(commit):
         subject = commit["subject"]
         subject += " [%s]" % (", ".join(commit["authors"]), )
 
@@ -1406,8 +1219,6 @@ else:
 
 if mako:
 
-    import mako.template ## pylint: disable=wrong-import-position
-
     mako_env = dict((f.__name__, f) for f in (ucfirst, indent, textwrap,
                                               paragraph_wrap))
 
@@ -1445,6 +1256,8 @@ else:
 def stdout(content):
     for chunk in content:
         safe_print(chunk)
+
+
 @available_in_config
 def FileInsertAtFirstRegexMatch(filename, pattern, flags=0,
                                 idx=lambda m: m.start()):
@@ -1459,8 +1272,8 @@ def FileInsertAtFirstRegexMatch(filename, pattern, flags=0,
         new_offset = 0
         postfix = False
 
-        with open(filename + "~", "w") as dst:
-            with open(filename, "r") as src:
+        with open(filename + "~", "w", encoding=DEFAULT_ENCODING) as dst:
+            with open(filename, "r", encoding=DEFAULT_ENCODING) as src:
                 for line in src:
                     if postfix:
                         dst.write(line)
@@ -1495,8 +1308,6 @@ def FileRegexSubst(filename, pattern, replace, flags=0):
                 pattern,
                 replace.replace(r'\o', "".join(content).replace('\\', '\\\\')),
                 src, flags=flags)
-        if not PY3:
-            src = src.encode(_preferred_encoding)
         file_put_contents(filename, src)
 
     return _wrapped
@@ -1514,8 +1325,8 @@ def versions_data_iter(repository, revlist=None,
                        body_process=lambda x: x,
                        subject_process=lambda x: x,
                        log_encoding=DEFAULT_GIT_LOG_ENCODING,
-                       warn=warn,        ## Mostly used for test
-                       ):
+                       warn=warn,  # Mostly used for test
+                       ):  # pylint: disable=W0102
     """Returns an iterator through versions data structures
 
     (see ``gitchangelog.rc.reference`` file for more info)
@@ -1708,47 +1519,32 @@ def manage_obsolete_options(config):
 ## Command line parsing
 ##
 
-def parse_cmd_line(usage, description, epilog, exname, version):
+def parse_cmd_line(usage, description, epilog, exname):
 
-    import argparse
     kwargs = dict(usage=usage,
                   description=description,
                   epilog="\n" + epilog,
                   prog=exname,
                   formatter_class=argparse.RawTextHelpFormatter)
 
-    try:
-        parser = argparse.ArgumentParser(version=version, **kwargs)
-    except TypeError:  ## compat with argparse from python 3.4
-        parser = argparse.ArgumentParser(**kwargs)
-        parser.add_argument('-v', '--version',
-                            help="show program's version number and exit",
-                            action="version", version=version)
-
+    parser = argparse.ArgumentParser(**kwargs)
+    parser.add_argument("--version", action="version",
+                        version=f"gitchangelog {VERSION}")
     parser.add_argument('-d', '--debug',
                         help="Enable debug mode (show full tracebacks).",
                         action="store_true", dest="debug")
     parser.add_argument('revlist', nargs='*', action="store", default=[])
 
-    ## Remove "show" as first argument for compatibility reason.
-
-    argv = []
-    for i, arg in enumerate(sys.argv[1:]):
-        if arg.startswith("-"):
-            argv.append(arg)
-            continue
-        if arg == "show":
-            warn("'show' positional argument is deprecated.")
-            argv += sys.argv[i + 2:]
-            break
-        else:
-            argv += sys.argv[i + 1:]
-            break
-
-    return parser.parse_args(argv)
+    return parser.parse_args()
 
 
-eval_if_callable = lambda v: v() if callable(v) else v
+def eval_if_callable(v):
+    """
+    Rewritten lambda expression
+    """
+    if callable(v):
+        return v()
+    return v
 
 
 def get_revision(repository, config, opts):
@@ -1768,7 +1564,7 @@ def get_revision(repository, config, opts):
             revs = []
 
     for rev in revs:
-        if not isinstance(rev, basestring):
+        if not isinstance(rev, str):
             die("Invalid type for revision in revs list from config file. "
                 "'str' type is required, and a %r was given."
                 % type(rev).__name__)
@@ -1809,7 +1605,7 @@ class Config(dict):
     def __getitem__(self, label):
         if label not in self.keys():
             die("Missing value in config file for key '%s'." % label)
-        return super(Config, self).__getitem__(label)
+        return super().__getitem__(label)
 
 
 ##
@@ -1817,10 +1613,6 @@ class Config(dict):
 ##
 
 def safe_print(content):
-    if not PY3:
-        if isinstance(content, unicode):
-            content = content.encode(_preferred_encoding)
-
     try:
         print(content, end='')
         sys.stdout.flush()
@@ -1844,28 +1636,23 @@ def safe_print(content):
             ## https://www.python.org/dev/peps/pep-0528/
             stderr("  You might want to try to fix that by setting "
                    "PYTHONIOENCODING to 'utf-8'.")
-        exit(1)
+        sys.exit(1)
     except IOError as e:
-        if e.errno == 0 and not PY3 and WIN32:
-            ## Yes, had a strange IOError Errno 0 after outputing string
-            ## that contained UTF-8 chars on Windows and PY2.7
-            pass  ## Ignoring exception
-        elif ((WIN32 and e.errno == 22) or              ## Invalid argument
+        if ((WIN32 and e.errno == 22) or              ## Invalid argument
               (not WIN32 and e.errno == errno.EPIPE)):  ## Broken Pipe
             ## Nobody is listening anymore to stdout it seems. Let's bailout.
-            if PY3:
-                try:
-                    ## Called only to generate exception and have a chance at
-                    ## ignoring it. Otherwise this happens upon exit, and gets
-                    ## some error message printed on stderr.
-                    sys.stdout.close()
-                except BrokenPipeError:  ## expected outcome on linux
-                    pass
-                except OSError as e2:
-                    if e2.errno != 22:   ## expected outcome on WIN32
-                        raise
+            try:
+                ## Called only to generate exception and have a chance at
+                ## ignoring it. Otherwise this happens upon exit, and gets
+                ## some error message printed on stderr.
+                sys.stdout.close()
+            except BrokenPipeError:  ## expected outcome on linux
+                pass
+            except OSError as e2:
+                if e2.errno != 22:   ## expected outcome on WIN32
+                    raise
             ## Yay ! stdout is closed we can now exit safely.
-            exit(0)
+            sys.exit(0)
         else:
             raise
 
@@ -1876,7 +1663,6 @@ def safe_print(content):
 
 def main():
 
-    global DEBUG
     ## Basic environment infos
 
     reference_config = os.path.join(
@@ -1892,12 +1678,13 @@ def main():
 
     i = lambda x: x % {'exname': basename}
 
-    opts = parse_cmd_line(usage=i(usage_msg),
-                          description=i(description_msg),
-                          epilog=i(epilog_msg),
-                          exname=basename,
-                          version=__version__)
-    DEBUG = DEBUG or opts.debug
+    options = parse_cmd_line(
+        usage=i(usage_msg),
+        description=i(description_msg),
+        epilog=i(epilog_msg),
+        exname=basename
+    )
+    DEBUG = DEBUG or options.debug
 
     try:
         repository = GitRepos(".")
@@ -1949,7 +1736,7 @@ def main():
     config = Config(config)
 
     log_encoding = get_log_encoding(repository, config)
-    revlist = get_revision(repository, config, opts)
+    revlist = get_revision(repository, config, options)
     config['unreleased_version_label'] = eval_if_callable(
         config['unreleased_version_label'])
     manage_obsolete_options(config)
@@ -1968,7 +1755,7 @@ def main():
             log_encoding=log_encoding,
         )
 
-        if isinstance(content, basestring):
+        if isinstance(content, str):
             content = content.splitlines(True)
 
         config.get("publish", stdout)(content)
@@ -1980,7 +1767,7 @@ def main():
             stderr(format_last_exception())
         else:
             err("Keyboard Interrupt. Bailing out.")
-        exit(130)  ## Actual SIGINT as bash process convention.
+        sys.exit(130)  ## Actual SIGINT as bash process convention.
     except Exception as e:  ## pylint: disable=broad-except
         if DEBUG:
             err("Exception while running '%s':"
@@ -1992,8 +1779,11 @@ def main():
             stderr("  (set %s environment variable, "
                    "or use ``--debug`` to see full traceback)" %
                    (debug_varname, ))
-        exit(255)
+        sys.exit(255)
 
+
+DEBUG = ''
+VERSION = pkg_resources.get_distribution('gitchangelog').version
 
 ##
 ## Launch program

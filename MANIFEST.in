@@ -1,7 +1,5 @@
-graft src
-include bin/get-rcpath
-include *.rst LICENSE
-exclude *.ini *travis*
-recursive-exclude * __pycache__
-recursive-exclude * *.py[co]
-prune .git*
+graft test
+
+include tox.ini README.rst INSTALL.rst
+
+global-exclude *~ *.py[cod]

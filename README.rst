@@ -619,6 +619,7 @@ License
 =======
 
 Copyright (c) 2012-2018 Valentin Lab.
+Copyright (c) 2018-2022 Stephen Arnold
 
 Licensed under the `BSD License`_.
 

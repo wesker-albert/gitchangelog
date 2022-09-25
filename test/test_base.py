@@ -141,21 +141,6 @@ class GitChangelogTest(BaseGitReposTest):
             "Current stdout:\n%s" % out)
         self.assertNoDiff(self.REFERENCE, out)
 
-    def test_simple_run_show_call_deprecated(self):
-        out, err, errlvl = cmd('$tprog show')
-        self.assertContains(
-            err, "deprecated",
-            msg="There should be a warning about deprecated calls. "
-            "Current stderr:\n%r" % err)
-        self.assertEqual(
-            errlvl, 0,
-            msg="Should not fail on simple repo and without config file")
-        self.assertContains(
-            out, "0.0.2",
-            msg="At least one of the tags should be displayed in stdout... "
-            "Current stdout:\n%s" % out)
-        self.assertNoDiff(self.REFERENCE, out)
-
     def test_incremental_call(self):
         out, err, errlvl = cmd('$tprog 0.0.2..0.0.3')
         self.assertEqual(
@@ -232,21 +217,6 @@ class GitChangelogTest(BaseGitReposTest):
             msg="The tag 0.0.3 should be displayed in stdout... "
             "Current stdout:\n%s" % out)
         self.assertNoDiff(REFERENCE, out)
-
-    def test_incremental_show_call_deprecated(self):
-        out, err, errlvl = cmd('$tprog show 0.0.2..0.0.3')
-        self.assertEqual(
-            errlvl, 0,
-            msg="Should not fail on simple repo and without config file")
-        self.assertContains(
-            err, "deprecated",
-            msg="There should be a deprecated warning. "
-            "Current stderr:\n%r" % err)
-        self.assertContains(
-            out, "0.0.3",
-            msg="The tag 0.0.3 should be displayed in stdout... "
-            "Current stdout:\n%s" % out)
-        self.assertNoDiff(self.INCR_REFERENCE_002_003, out)
 
     def test_provided_config_file(self):
         """Check provided reference with older name for perfect same result."""
