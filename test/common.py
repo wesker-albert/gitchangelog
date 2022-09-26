@@ -75,7 +75,8 @@ BASE_PATH = os.path.normpath(os.path.join(
     ".."))
 tprog = os.path.join(BASE_PATH, "src", "gitchangelog", "gitchangelog.py")
 
-WITH_COVERAGE = gitchangelog.cmd("coverage --version")[2] == 0
+# WITH_COVERAGE = gitchangelog.cmd("coverage --version")[2] == 0
+WITH_COVERAGE = False
 if WITH_COVERAGE:
     source = os.path.join(BASE_PATH, 'src', 'gitchangelog')
     tprog = ('coverage run -a --source=%(source)s '

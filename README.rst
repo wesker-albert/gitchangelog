@@ -105,28 +105,6 @@ To run pylint::
   $ tox -e lint
 
 
-single executable installation
-------------------------------
-
-The file ``gitchangelog.py`` is a full blown executable and can be used
-without any other files. This is easier to use naturally on Linux/BSD
-systems. For instance, you could type in::
-
-  $ curl -sSL https://raw.githubusercontent.com/sarnold/gitchangelog/master/src/gitchangelog/gitchangelog.py > /usr/local/bin/gitchangelog &&
-  $ chmod +x /usr/local/bin/gitchangelog
-
-It'll install ``gitchangelog`` to be accessible for all users and will
-use the default python interpreter of your running session.
-
-Please note: if you choose to install it in this standalone mode, then
-you must make sure to value at least all the required configuration
-keys in your config file. As a good start you should probably copy the
-`reference configuration file`_ as your base configuration file.
-
-This is due to the fact that ``gitchangelog`` can not anymore reach
-the reference configuration file to get default values.
-
-
 Sample
 ======
 
@@ -239,7 +217,7 @@ simple.  You should be able to use it as required.
 .. _reference configuration file: https://github.com/sarnold/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.reference
 .. _github.release file: https://github.com/sarnold/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.github.release
 
-The changelog of gitchangelog is generated with himself and with the reference
+The changelog of gitchangelog is generated with itself and with the reference
 configuration file. You'll see the output in the `changelog of the PyPI page`_.
 
 .. _changelog of the PyPI page: http://pypi.python.org/pypi/gitchangelog
@@ -619,6 +597,7 @@ License
 =======
 
 Copyright (c) 2012-2018 Valentin Lab.
+Copyright (c) 2018-2022 Stephen Arnold
 
 Licensed under the `BSD License`_.
 

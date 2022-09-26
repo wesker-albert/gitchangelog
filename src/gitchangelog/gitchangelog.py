@@ -1,23 +1,23 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
-from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
-import locale
-import re
-import os
-import sys
-import glob
-import textwrap
-import datetime
+import argparse
 import collections
-import traceback
 import contextlib
-import itertools
+import datetime
 import errno
+import glob
+import itertools
+import locale
+import os
+import re
+import sys
+import textwrap
+import traceback
+from subprocess import PIPE, Popen
 
-from subprocess import Popen, PIPE
+import pkg_resources
 
 try:
     import pystache
@@ -26,16 +26,9 @@ except ImportError:  # pragma: no cover
 
 try:
     import mako
+    import mako.template
 except ImportError:  # pragma: no cover
     mako = None
-
-
-# this accepts a git tag with a 'pN' suffix (as a patch/post release tag) and
-# returns a PEP 440 '-N' that normalizes to a .post version for python
-#__version__ = '3.0.4p1'.replace('p', '-')
-__version__ = '3.0.9'
-
-DEBUG = None
 
 
 ##
@@ -44,11 +37,7 @@ DEBUG = None
 
 PY_VERSION = float("%d.%d" % sys.version_info[0:2])
 PY3 = PY_VERSION >= 3
-
-try:
-    basestring
-except NameError:
-    basestring = str  # pylint: disable=redefined-builtin
+DEFAULT_ENCODING = 'utf-8'
 
 WIN32 = sys.platform == 'win32'
 if WIN32:
@@ -60,168 +49,6 @@ else:
         'close_fds': True,
     }
 
-##
-##
-##
-
-if WIN32 and not PY3:  # pragma: PY2
-
-    ## Sorry about the following, all this code is to ensure full
-    ## compatibility with python 2.7 under windows about sending unicode
-    ## command-line
-
-    import ctypes
-    import subprocess
-    import _subprocess
-    from ctypes import byref, windll, c_char_p, c_wchar_p, c_void_p, \
-         Structure, sizeof, c_wchar, WinError
-    from ctypes.wintypes import BYTE, WORD, LPWSTR, BOOL, DWORD, LPVOID, \
-         HANDLE
-
-
-    ##
-    ## Types
-    ##
-
-    CREATE_UNICODE_ENVIRONMENT = 0x00000400
-    LPCTSTR = c_char_p
-    LPTSTR = c_wchar_p
-    LPSECURITY_ATTRIBUTES = c_void_p
-    LPBYTE  = ctypes.POINTER(BYTE)
-
-    class STARTUPINFOW(Structure):
-        _fields_ = [
-            ("cb",              DWORD),  ("lpReserved",    LPWSTR),
-            ("lpDesktop",       LPWSTR), ("lpTitle",       LPWSTR),
-            ("dwX",             DWORD),  ("dwY",           DWORD),
-            ("dwXSize",         DWORD),  ("dwYSize",       DWORD),
-            ("dwXCountChars",   DWORD),  ("dwYCountChars", DWORD),
-            ("dwFillAtrribute", DWORD),  ("dwFlags",       DWORD),
-            ("wShowWindow",     WORD),   ("cbReserved2",   WORD),
-            ("lpReserved2",     LPBYTE), ("hStdInput",     HANDLE),
-            ("hStdOutput",      HANDLE), ("hStdError",     HANDLE),
-        ]
-
-    LPSTARTUPINFOW = ctypes.POINTER(STARTUPINFOW)
-
-
-    class PROCESS_INFORMATION(Structure):
-        _fields_ = [
-            ("hProcess",         HANDLE), ("hThread",          HANDLE),
-            ("dwProcessId",      DWORD),  ("dwThreadId",       DWORD),
-        ]
-
-    LPPROCESS_INFORMATION = ctypes.POINTER(PROCESS_INFORMATION)
-
-
-    class DUMMY_HANDLE(ctypes.c_void_p):
-
-        def __init__(self, *a, **kw):
-            super(DUMMY_HANDLE, self).__init__(*a, **kw)
-            self.closed = False
-
-        def Close(self):
-            if not self.closed:
-                windll.kernel32.CloseHandle(self)
-                self.closed = True
-
-        def __int__(self):
-            return self.value
-
-
-    CreateProcessW = windll.kernel32.CreateProcessW
-    CreateProcessW.argtypes = [
-        LPCTSTR, LPTSTR, LPSECURITY_ATTRIBUTES,
-        LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, LPCTSTR,
-        LPSTARTUPINFOW, LPPROCESS_INFORMATION,
-    ]
-    CreateProcessW.restype = BOOL
-
-
-    ##
-    ## Patched functions/classes
-    ##
-
-    def CreateProcess(executable, args, _p_attr, _t_attr,
-                      inherit_handles, creation_flags, env, cwd,
-                      startup_info):
-        """Create a process supporting unicode executable and args for win32
-
-        Python implementation of CreateProcess using CreateProcessW for Win32
-
-        """
-
-        si = STARTUPINFOW(
-            dwFlags=startup_info.dwFlags,
-            wShowWindow=startup_info.wShowWindow,
-            cb=sizeof(STARTUPINFOW),
-            ## XXXvlab: not sure of the casting here to ints.
-            hStdInput=int(startup_info.hStdInput),
-            hStdOutput=int(startup_info.hStdOutput),
-            hStdError=int(startup_info.hStdError),
-        )
-
-        wenv = None
-        if env is not None:
-            ## LPCWSTR seems to be c_wchar_p, so let's say CWSTR is c_wchar
-            env = (unicode("").join([
-                unicode("%s=%s\0") % (k, v)
-                for k, v in env.items()])) + unicode("\0")
-            wenv = (c_wchar * len(env))()
-            wenv.value = env
-
-        pi = PROCESS_INFORMATION()
-        creation_flags |= CREATE_UNICODE_ENVIRONMENT
-
-        if CreateProcessW(executable, args, None, None,
-                          inherit_handles, creation_flags,
-                          wenv, cwd, byref(si), byref(pi)):
-            return (DUMMY_HANDLE(pi.hProcess), DUMMY_HANDLE(pi.hThread),
-                    pi.dwProcessId, pi.dwThreadId)
-        raise WinError()
-
-
-    class Popen(subprocess.Popen):
-        """This superseeds Popen and corrects a bug in cPython 2.7 implem"""
-
-        def _execute_child(self, args, executable, preexec_fn, close_fds,
-                           cwd, env, universal_newlines,
-                           startupinfo, creationflags, shell, to_close,
-                           p2cread, p2cwrite,
-                           c2pread, c2pwrite,
-                           errread, errwrite):
-            """Code from part of _execute_child from Python 2.7 (9fbb65e)
-
-            There are only 2 little changes concerning the construction of
-            the the final string in shell mode: we preempt the creation of
-            the command string when shell is True, because original function
-            will try to encode unicode args which we want to avoid to be able to
-            sending it as-is to ``CreateProcess``.
-
-            """
-            if not isinstance(args, subprocess.types.StringTypes):
-                args = subprocess.list2cmdline(args)
-
-            if startupinfo is None:
-                startupinfo = subprocess.STARTUPINFO()
-            if shell:
-                startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = _subprocess.SW_HIDE
-                comspec = os.environ.get("COMSPEC", unicode("cmd.exe"))
-                args = unicode('{} /c "{}"').format(comspec, args)
-                if (_subprocess.GetVersion() >= 0x80000000 or
-                        os.path.basename(comspec).lower() == "command.com"):
-                    w9xpopen = self._find_w9xpopen()
-                    args = unicode('"%s" %s') % (w9xpopen, args)
-                    creationflags |= _subprocess.CREATE_NEW_CONSOLE
-
-            super(Popen, self)._execute_child(args, executable,
-                preexec_fn, close_fds, cwd, env, universal_newlines,
-                startupinfo, creationflags, False, to_close, p2cread,
-                p2cwrite, c2pread, c2pwrite, errread, errwrite)
-
-    _subprocess.CreateProcess = CreateProcess
-
 
 ##
 ## Help and usage strings
@@ -229,7 +56,7 @@ if WIN32 and not PY3:  # pragma: PY2
 
 usage_msg = """
   %(exname)s {-h|--help}
-  %(exname)s {-v|--version}
+  %(exname)s {--version}
   %(exname)s [--debug|-d] [REVLIST]"""
 
 description_msg = """\
@@ -252,6 +79,7 @@ Config file location will be resolved in this order:
 ## Shell command helper functions
 ##
 
+
 def stderr(msg):
     print(msg, file=sys.stderr)
 
@@ -271,13 +99,12 @@ def die(msg=None, errlvl=1):
 
 
 class ShellError(Exception):
-
     def __init__(self, msg, errlvl=None, command=None, out=None, err=None):
         self.errlvl = errlvl
         self.command = command
         self.out = out
         self.err = err
-        super(ShellError, self).__init__(msg)
+        super().__init__(msg)
 
 
 @contextlib.contextmanager
@@ -314,8 +141,8 @@ def format_last_exception(prefix="  | "):
     """
 
     return '\n'.join(
-        str(prefix + line)
-        for line in traceback.format_exc().strip().split('\n'))
+        str(prefix + line) for line in traceback.format_exc().strip().split('\n')
+    )
 
 
 ##
@@ -333,29 +160,32 @@ def available_in_config(f):
     return f
 
 
-def load_config_file(filename, default_filename=None,
-                     fail_if_not_present=True):
+def load_config_file(filename, default_filename=None, fail_if_not_present=True):
     """Loads data from a config file."""
 
     config = _config_env.copy()
     for fname in [default_filename, filename]:
         if fname and os.path.exists(fname):
             if not os.path.isfile(fname):
-                die("config file path '%s' exists but is not a file !"
-                    % (fname, ))
+                die("config file path '%s' exists but is not a file !" % (fname,))
             content = file_get_contents(fname)
             try:
                 code = compile(content, fname, 'exec')
-                exec(code, config)  ## pylint: disable=exec-used
+                exec(code, config)  # pylint: disable=exec-used
             except SyntaxError as e:
-                die('Syntax error in config file: %s\n%s'
-                    'File %s, line %i'
-                    % (str(e),
-                       (indent(e.text.rstrip(), "  | ") + "\n")  if e.text else "",
-                       e.filename, e.lineno))
+                die(
+                    'Syntax error in config file: %s\n%s'
+                    'File %s, line %s'
+                    % (
+                        str(e),
+                        (indent(e.text.rstrip(), "  | ") + "\n") if e.text else "",
+                        e.filename,
+                        e.lineno,
+                    )
+                )
         else:
             if fail_if_not_present:
-                die('%s config file is not found and is required.' % (fname, ))
+                die('%s config file is not found and is required.' % (fname,))
 
     return config
 
@@ -364,9 +194,9 @@ def load_config_file(filename, default_filename=None,
 ## Text functions
 ##
 
-@available_in_config
-class TextProc(object):
 
+@available_in_config
+class TextProc:
     def __init__(self, fun):
         self.fun = fun
         if hasattr(fun, "__name__"):
@@ -379,12 +209,18 @@ class TextProc(object):
         if isinstance(value, TextProc):
             return TextProc(lambda text: value.fun(self.fun(text)))
         import inspect
-        (_frame, filename, lineno, _function_name, lines, _index) = \
-                inspect.stack()[1]
-        raise SyntaxError("Invalid syntax in config file",
-            (filename, lineno, 0,
-             "Invalid chain with a non TextProc element %r:\n%s"
-             % (value, indent("".join(lines).strip(), "  | "))))
+
+        (_frame, filename, lineno, _function_name, lines, _index) = inspect.stack()[1]
+        raise SyntaxError(
+            "Invalid syntax in config file",
+            (
+                filename,
+                lineno,
+                0,
+                "Invalid chain with a non TextProc element %r:\n%s"
+                % (value, indent("".join(lines).strip(), "  | ")),
+            ),
+        )
 
 
 def set_if_empty(text, msg="No commit message."):
@@ -432,10 +268,8 @@ def indent(text, chars="  ", first=None):
     if first:
         first_line = text.split("\n")[0]
         rest = '\n'.join(text.split("\n")[1:])
-        return '\n'.join([(first + first_line).rstrip(),
-                          indent(rest, chars=chars)])
-    return '\n'.join([(chars + line).rstrip()
-                      for line in text.split('\n')])
+        return '\n'.join([(first + first_line).rstrip(), indent(rest, chars=chars)])
+    return '\n'.join([(chars + line).rstrip() for line in text.split('\n')])
 
 
 def paragraph_wrap(text, regexp="\n\n"):
@@ -453,12 +287,14 @@ def paragraph_wrap(text, regexp="\n\n"):
 
     """
     regexp = re.compile(regexp, re.MULTILINE)
-    return "\n".join("\n".join(textwrap.wrap(paragraph.strip()))
-                     for paragraph in regexp.split(text)).strip()
+    return "\n".join(
+        "\n".join(textwrap.wrap(paragraph.strip())) for paragraph in regexp.split(text)
+    ).strip()
 
 
 def curryfy(f):
     return lambda *a, **kw: TextProc(lambda txt: f(txt, *a, **kw))
+
 
 ## these are curryfied version of their lower case definition
 
@@ -469,42 +305,39 @@ noop = TextProc(lambda txt: txt)
 strip = TextProc(lambda txt: txt.strip())
 SetIfEmpty = curryfy(set_if_empty)
 
-for _label in ("Indent", "Wrap", "ReSub", "noop", "final_dot",
-              "ucfirst", "strip", "SetIfEmpty"):
+for _label in (
+    "Indent",
+    "Wrap",
+    "ReSub",
+    "noop",
+    "final_dot",
+    "ucfirst",
+    "strip",
+    "SetIfEmpty",
+):
     _config_env[_label] = locals()[_label]
 
 ##
 ## File
 ##
 
-def file_get_contents(filename):
-    with open(filename) as f:
-        out = f.read()
-    if not PY3:
-        if not isinstance(out, unicode):
-            out = out.decode(_preferred_encoding)
-        ## remove encoding declaration (for some reason, python 2.7
-        ## don't like it).
-        out = re.sub(r"^(\s*#.*\s*)coding[:=]\s*([-\w.]+\s*;?\s*)",
-                     r"\1", out, re.DOTALL)
 
+def file_get_contents(filename):
+    with open(filename, encoding=DEFAULT_ENCODING) as f:
+        out = f.read()
     return out
 
 
 def file_put_contents(filename, string):
     """Write string to filename."""
-    if PY3:
-        fopen = open(filename, 'w', newline='')
-    else:
-        fopen = open(filename, 'wb')
-
-    with fopen as f:
+    with open(filename, 'w', newline='', encoding=DEFAULT_ENCODING) as f:
         f.write(string)
 
 
 ##
 ## Inferring revision
 ##
+
 
 def _file_regex_match(filename, pattern, **kw):
     if not os.path.isfile(filename):
@@ -516,8 +349,8 @@ def _file_regex_match(filename, pattern, **kw):
         if isinstance(pattern, type(re.compile(''))):
             pattern = pattern.pattern
         raise ValueError(
-            "Regex %s did not match any substring in '%s'."
-            % (pattern, filename))
+            "Regex %s did not match any substring in '%s'." % (pattern, filename)
+        )
     return match
 
 
@@ -528,21 +361,26 @@ def FileFirstRegexMatch(filename, pattern):
         dct = match.groupdict()
         if dct:
             if "rev" not in dct:
-                warn("Named pattern used, but no one are named 'rev'. "
-                     "Using full match.")
+                warn(
+                    "Named pattern used, but no one are named 'rev'. " "Using full match."
+                )
                 return match.group(0)
             if dct['rev'] is None:
                 die("Named pattern used, but it was not valued.")
             return dct['rev']
         return match.group(0)
+
     return _call
 
 
 @available_in_config
-def Caret(l):
+def Caret(clbl):
     def _call():
-        return "^%s" % eval_if_callable(l)
+        return "^%s" % eval_if_callable(clbl)
+
     return _call
+
+
 ##
 ## System functions
 ##
@@ -552,12 +390,11 @@ def Caret(l):
 ## PY2, ``sys.stdout.encoding`` without PYTHONIOENCODING set does not
 ## get any values set in subshells.  However, if _preferred_encoding
 ## is not set to utf-8, it leads to encoding errors.
-_preferred_encoding = os.environ.get("PYTHONIOENCODING") or \
-                      locale.getpreferredencoding()
+_preferred_encoding = os.environ.get("PYTHONIOENCODING") or locale.getpreferredencoding()
 DEFAULT_GIT_LOG_ENCODING = 'utf-8'
 
 
-class Phile(object):
+class Phile:
     """File like API to read fields separated by any delimiters
 
     It'll take care of file decoding to unicode.
@@ -607,9 +444,8 @@ class Phile(object):
 
     def read(self, delimiter="\n"):
         buf = ""
-        if PY3:
-            delimiter = delimiter.encode(_preferred_encoding)
-            buf = buf.encode(_preferred_encoding)
+        delimiter = delimiter.encode(_preferred_encoding)
+        buf = buf.encode(_preferred_encoding)
         while True:
             chunk = self._file.read(self._buffersize)
             if not chunk:
@@ -622,8 +458,7 @@ class Phile(object):
             buf = records[-1]
 
     def write(self, buf):
-        if PY3:
-            buf = buf.encode(self._encoding)
+        buf = buf.encode(self._encoding)
         return self._file.write(buf)
 
     def close(self):
@@ -631,13 +466,17 @@ class Phile(object):
 
 
 class Proc(Popen):
-
     def __init__(self, command, env=None, encoding=_preferred_encoding):
-        super(Proc, self).__init__(
-            command, shell=True,
-            stdin=PIPE, stdout=PIPE, stderr=PIPE,
-            close_fds=PLT_CFG['close_fds'], env=env,
-            universal_newlines=False)
+        super().__init__(
+            command,
+            shell=True,
+            stdin=PIPE,
+            stdout=PIPE,
+            stderr=PIPE,
+            close_fds=PLT_CFG['close_fds'],
+            env=env,
+            universal_newlines=False,
+        )
 
         self.stdin = Phile(self.stdin, encoding=encoding)
         self.stdout = Phile(self.stdout, encoding=encoding)
@@ -646,21 +485,27 @@ class Proc(Popen):
 
 def cmd(command, env=None, shell=True):
 
-    p = Popen(command, shell=shell,
-              stdin=PIPE, stdout=PIPE, stderr=PIPE,
-              close_fds=PLT_CFG['close_fds'], env=env,
-              universal_newlines=False)
-    out, err = p.communicate()
+    with Popen(
+        command,
+        shell=shell,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=PIPE,
+        close_fds=PLT_CFG['close_fds'],
+        env=env,
+        universal_newlines=False,
+    ) as p:
+        out, err = p.communicate()
+
     return (
-        out.decode(getattr(sys.stdout, "encoding", None) or
-                      _preferred_encoding),
-        err.decode(getattr(sys.stderr, "encoding", None) or
-                      _preferred_encoding),
-        p.returncode)
+        out.decode(getattr(sys.stdout, "encoding", None) or _preferred_encoding),
+        err.decode(getattr(sys.stderr, "encoding", None) or _preferred_encoding),
+        p.returncode,
+    )
 
 
 @available_in_config
-def wrap(command, ignore_errlvls=[0], env=None, shell=True):
+def wrap(command, ignore_errlvls=None, env=None, shell=True):
     """Wraps a shell command and casts an exception on unexpected errlvl
 
     >>> wrap('/tmp/lsdjflkjf') # doctest: +ELLIPSIS +IGNORE_EXCEPTION_DETAIL
@@ -682,6 +527,7 @@ def wrap(command, ignore_errlvls=[0], env=None, shell=True):
       | hello
 
     """
+    ignore_errlvls = ignore_errlvls or [0]
 
     out, err, errlvl = cmd(command, env=env, shell=shell)
 
@@ -698,9 +544,14 @@ def wrap(command, ignore_errlvls=[0], env=None, shell=True):
             formatted.append("stderr:\n%s" % indent(err, "| "))
         msg = '\n'.join(formatted)
 
-        raise ShellError("Wrapped command %r exited with errorlevel %d.\n%s"
-                         % (command, errlvl, indent(msg, chars="  ")),
-                         errlvl=errlvl, command=command, out=out, err=err)
+        raise ShellError(
+            "Wrapped command %r exited with errorlevel %d.\n%s"
+            % (command, errlvl, indent(msg, chars="  ")),
+            errlvl=errlvl,
+            command=command,
+            out=out,
+            err=err,
+        )
     return out
 
 
@@ -715,8 +566,8 @@ def swrap(command, **kwargs):
 ## git information access
 ##
 
-class SubGitObjectMixin(object):
 
+class SubGitObjectMixin:
     def __init__(self, repos):
         self._repos = repos
 
@@ -742,10 +593,10 @@ GIT_FORMAT_KEYS = {
 
 GIT_FULL_FORMAT_STRING = "%x00".join(GIT_FORMAT_KEYS.values())
 
-REGEX_RFC822_KEY_VALUE = \
+REGEX_RFC822_KEY_VALUE = (
     r'(^|\n)(?P<key>[A-Z]\w+(-\w+)*): (?P<value>[^\n]*(\n\s+[^\n]*)*)'
-REGEX_RFC822_POSTFIX = \
-    r'(%s)+$' % REGEX_RFC822_KEY_VALUE
+)
+REGEX_RFC822_POSTFIX = r'(%s)+$' % REGEX_RFC822_KEY_VALUE
 
 
 class GitCommit(SubGitObjectMixin):
@@ -848,7 +699,7 @@ class GitCommit(SubGitObjectMixin):
     """
 
     def __init__(self, repos, identifier):
-        super(GitCommit, self).__init__(repos)
+        super().__init__(repos)
         self.identifier = identifier
         self._trailer_parsed = False
 
@@ -858,43 +709,43 @@ class GitCommit(SubGitObjectMixin):
         if label not in attrs:
             try:
                 return self.__dict__[label]
-            except KeyError:
+            except KeyError as exc:
                 if self._trailer_parsed:
-                    raise AttributeError(label)
+                    raise AttributeError(label) from exc
 
         identifier = self.identifier
 
         ## Compute only missing information
-        missing_attrs = [l for l in attrs if l not in self.__dict__]
+        missing_attrs = [x for x in attrs if x not in self.__dict__]
         ## some commit can be already fully specified (see ``mk_commit``)
         if missing_attrs:
-            aformat = "%x00".join(GIT_FORMAT_KEYS[l]
-                                  for l in missing_attrs)
+            aformat = "%x00".join(GIT_FORMAT_KEYS[x] for x in missing_attrs)
             try:
-                ret = self.git.log([identifier, "--max-count=1",
-                                   "--pretty=format:%s" % aformat, "--"])
-            except ShellError:
+                ret = self.git.log(
+                    [identifier, "--max-count=1", "--pretty=format:%s" % aformat, "--"]
+                )
+            except ShellError as exc:
                 if DEBUG:
                     raise
-                raise ValueError("Given commit identifier %r does not exist"
-                                 % self.identifier)
+                raise ValueError(
+                    "Given commit identifier %r does not exist" % self.identifier
+                ) from exc
             attr_values = ret.split("\x00")
             for attr, value in zip(missing_attrs, attr_values):
                 setattr(self, attr, value.strip())
 
         ## Let's interpret RFC822-like header keys that could be in the body
-        match = re.search(REGEX_RFC822_POSTFIX, self.body)
+        match = re.search(REGEX_RFC822_POSTFIX, self.body)  # pylint: disable=E0203
         if match is not None:
             pos = match.start()
-            postfix = self.body[pos:]
-            self.body = self.body[:pos]
+            postfix = self.body[pos:]  # pylint: disable=E0203
+            self.body = self.body[:pos]  # pylint: disable=W0201
             for match in re.finditer(REGEX_RFC822_KEY_VALUE, postfix):
                 dct = match.groupdict()
                 key = dct["key"].replace("-", "_").lower()
                 if "\n" in dct["value"]:
                     first_line, remaining = dct["value"].split('\n', 1)
-                    value = "%s\n%s" % (first_line,
-                                        textwrap.dedent(remaining))
+                    value = "%s\n%s" % (first_line, textwrap.dedent(remaining))
                 else:
                     value = dct["value"]
                 try:
@@ -902,30 +753,30 @@ class GitCommit(SubGitObjectMixin):
                 except KeyError:
                     setattr(self, "trailer_%s" % key, value)
                 else:
-                    setattr(self, "trailer_%s" % key,
-                            prev_value + [value, ]
-                            if isinstance(prev_value, list)
-                            else [prev_value, value, ])
+                    setattr(
+                        self,
+                        "trailer_%s" % key,
+                        prev_value + [value] if isinstance(prev_value, list) else [prev_value, value],
+                    )
         self._trailer_parsed = True
         return getattr(self, label)
 
     @property
     def author_names(self):
-        return [re.sub(r'^([^<]+)<[^>]+>\s*$', r'\1', author).strip()
-                for author in self.authors]
+        return [
+            re.sub(r'^([^<]+)<[^>]+>\s*$', r'\1', author).strip()
+            for author in self.authors
+        ]
 
     @property
     def authors(self):
         co_authors = getattr(self, 'trailer_co_authored_by', [])
-        co_authors = co_authors if isinstance(co_authors, list) \
-                     else [co_authors]
-        return sorted(co_authors +
-                      ["%s <%s>" % (self.author_name, self.author_email)])
+        co_authors = co_authors if isinstance(co_authors, list) else [co_authors]
+        return sorted(co_authors + ["%s <%s>" % (self.author_name, self.author_email)])
 
     @property
     def date(self):
-        d = datetime.datetime.utcfromtimestamp(
-            float(self.author_date_timestamp))
+        d = datetime.datetime.utcfromtimestamp(float(self.author_date_timestamp))
         return d.strftime('%Y-%m-%d')
 
     @property
@@ -941,15 +792,17 @@ class GitCommit(SubGitObjectMixin):
     @property
     def tagger_date_timestamp(self):
         if not self.has_annotated_tag:
-            raise ValueError("Can't access 'tagger_date_timestamp' on commit without annotated tag.")
+            raise ValueError(
+                "Can't access 'tagger_date_timestamp' on commit without annotated tag."
+            )
         tagger_date_utc = self.git.for_each_ref(
-            'refs/tags/%s' % self.identifier, format='%(taggerdate:raw)')
+            'refs/tags/%s' % self.identifier, format='%(taggerdate:raw)'
+        )
         return tagger_date_utc.split(" ", 1)[0]
 
     @property
     def tagger_date(self):
-        d = datetime.datetime.utcfromtimestamp(
-            float(self.tagger_date_timestamp))
+        d = datetime.datetime.utcfromtimestamp(float(self.tagger_date_timestamp))
         return d.strftime('%Y-%m-%d')
 
     def __le__(self, value):
@@ -1062,16 +915,12 @@ class GitConfig(SubGitObjectMixin):
 
     """
 
-    def __init__(self, repos):
-        super(GitConfig, self).__init__(repos)
-
     def __getattr__(self, label):
         try:
             res = self.git.config(label)
         except ShellError as e:
             if e.errlvl == 1 and e.out == "":
-                raise AttributeError("key %r is not found in git config."
-                                     % label)
+                raise AttributeError("key %r is not found in git config." % label) from e
             raise
         return res
 
@@ -1081,12 +930,11 @@ class GitConfig(SubGitObjectMixin):
     def __getitem__(self, label):
         try:
             return getattr(self, label)
-        except AttributeError:
-            raise KeyError(label)
+        except AttributeError as e:
+            raise KeyError(label) from e
 
 
 class GitCmd(SubGitObjectMixin):
-
     def __getattr__(self, label):
         label = label.replace("_", "-")
 
@@ -1095,15 +943,15 @@ class GitCmd(SubGitObjectMixin):
                 return swrap(command, **kwargs)
 
         def method(*args, **kwargs):
-            if (len(args) == 1 and not isinstance(args[0], basestring)):
+            if len(args) == 1 and not isinstance(args[0], str):
                 return dir_swrap(
-                    ['git', label, ] + args[0],
+                    ['git', label] + args[0],
                     shell=False,
-                    env=kwargs.get("env", None))
+                    env=kwargs.get("env", None),
+                )
             cli_args = []
             for key, value in kwargs.items():
-                cli_key = (("-%s" if len(key) == 1 else "--%s")
-                           % key.replace("_", "-"))
+                cli_key = ("-%s" if len(key) == 1 else "--%s") % key.replace("_", "-")
                 if isinstance(value, bool):
                     cli_args.append(cli_key)
                 else:
@@ -1112,12 +960,15 @@ class GitCmd(SubGitObjectMixin):
 
             cli_args.extend(args)
 
-            return dir_swrap(['git', label, ] + cli_args, shell=False)
+            return dir_swrap(
+                ['git', label] + cli_args,
+                shell=False,
+            )
+
         return method
 
 
-class GitRepos(object):
-
+class GitRepos:
     def __init__(self, path):
 
         ## Saving this original path to ensure all future git commands
@@ -1127,27 +978,27 @@ class GitRepos(object):
         ## verify ``git`` command is accessible:
         try:
             self._git_version = self.git.version()
-        except ShellError:
+        except ShellError as e:
             if DEBUG:
                 raise
             raise EnvironmentError(
                 "Required ``git`` command not found or broken in $PATH. "
-                "(calling ``git version`` failed.)")
+                "(calling ``git version`` failed.)"
+            ) from e
 
         ## verify that we are in a git repository
         try:
             self.git.remote()
-        except ShellError:
+        except ShellError as e:
             if DEBUG:
                 raise
             raise EnvironmentError(
-                "Not in a git repository. (calling ``git remote`` failed.)")
+                "Not in a git repository. (calling ``git remote`` failed.)"
+            ) from e
 
         self.bare = self.git.rev_parse(is_bare_repository=True) == "true"
-        self.toplevel = (None if self.bare else
-                         self.git.rev_parse(show_toplevel=True))
-        self.gitdir = normpath(self.git.rev_parse(git_dir=True),
-                               cwd=self._orig_path)
+        self.toplevel = None if self.bare else self.git.rev_parse(show_toplevel=True)
+        self.gitdir = normpath(self.git.rev_parse(git_dir=True), cwd=self._orig_path)
 
     @classmethod
     def create(cls, directory, *args, **kwargs):
@@ -1191,34 +1042,43 @@ class GitRepos(object):
         ## ``git tags --sort -v:refname`` in git version >2.0.
         ## Sorting and reversing with command line is not available on
         ## git version <2.0
-        return sorted([self.commit(tag) for tag in tags if tag != ''],
-                      key=lambda x: int(x.committer_date_timestamp))
+        return sorted(
+            [self.commit(tag) for tag in tags if tag != ''],
+            key=lambda x: int(x.committer_date_timestamp),
+        )
 
-    def log(self, includes=["HEAD", ], excludes=[], include_merge=True,
-            encoding=_preferred_encoding):
+    def log(
+        self,
+        includes=None,
+        excludes=None,
+        include_merge=True,
+        encoding=_preferred_encoding,
+    ):  # pylint: disable=W0102
         """Reverse chronological list of git repository's commits
 
         Note: rev lists can be GitCommit instance list or identifier list.
 
         """
+        includes = includes or ["HEAD"]
+        excludes = excludes or []
 
-        refs = {'includes': includes,
-                'excludes': excludes}
+        refs = {'includes': includes, 'excludes': excludes}
         for ref_type in ('includes', 'excludes'):
             for idx, ref in enumerate(refs[ref_type]):
                 if not isinstance(ref, GitCommit):
                     refs[ref_type][idx] = self.commit(ref)
 
         ## --topo-order: don't mix commits from separate branches.
-        plog = Proc("git log --stdin -z --topo-order --pretty=format:%s %s --"
-                    % (GIT_FULL_FORMAT_STRING,
-                       '--no-merges' if not include_merge else ''),
-                    encoding=encoding)
+        plog = Proc(
+            "git log --stdin -z --topo-order --pretty=format:%s %s --"
+            % (GIT_FULL_FORMAT_STRING, '--no-merges' if not include_merge else ''),
+            encoding=encoding,
+        )
         for ref in refs["includes"]:
-            plog.stdin.write("%s\n" % ref.sha1)
+            plog.stdin.write("%s\n" % ref.sha1)  # pylint: disable=E1101
 
         for ref in refs["excludes"]:
-            plog.stdin.write("^%s\n" % ref.sha1)
+            plog.stdin.write("^%s\n" % ref.sha1)  # pylint: disable=E1101
         plog.stdin.close()
 
         def mk_commit(dct):
@@ -1231,18 +1091,17 @@ class GitRepos(object):
         values = plog.stdout.read("\x00")
 
         try:
-            while True:  ## next(values) will eventualy raise a StopIteration
-                yield mk_commit(dict([(key, next(values))
-                                      for key in GIT_FORMAT_KEYS]))
+            while True:  # next(values) will eventualy raise a StopIteration
+                yield mk_commit(dict([(key, next(values)) for key in GIT_FORMAT_KEYS]))
         except StopIteration:
-            pass  ## since 3.7, we are not allowed anymore to trickle down
-                  ## StopIteration.
+            pass  # since 3.7, we are not allowed anymore to trickle down
+            ## StopIteration.
         finally:
             plog.stdout.close()
             plog.stderr.close()
 
 
-def first_matching(section_regexps, string):
+def first_matching(section_regexps, string):  # pylint: disable=R1710
     for section, regexps in section_regexps:
         if regexps is None:
             return section
@@ -1251,7 +1110,7 @@ def first_matching(section_regexps, string):
                 return section
 
 
-def ensure_template_file_exists(label, template_name):
+def ensure_template_file_exists(label, template_name):  # pylint: disable=R1710
     """Return template file path given a label hint and the template name
 
     Template name can be either a filename with full path,
@@ -1264,64 +1123,67 @@ def ensure_template_file_exists(label, template_name):
     """
 
     try:
-        template_path = GitRepos(os.getcwd()).config.get(
-            "gitchangelog.template-path")
+        template_path = GitRepos(os.getcwd()).config.get("gitchangelog.template-path")
     except ShellError as e:
         stderr(
             "Error parsing git config: %s."
-            " Won't be able to read 'template-path' if defined."
-            % (str(e)))
+            " Won't be able to read 'template-path' if defined." % (str(e))
+        )
         template_path = None
 
     if template_path:
         path_file = path_label = template_path
     else:
         path_file = os.getcwd()
-        path_label = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                  "templates", label)
+        path_label = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "templates", label
+        )
 
-    for ftn in [os.path.join(path_file, template_name),
-                os.path.join(path_label, "%s.tpl" % template_name)]:
+    for ftn in [
+        os.path.join(path_file, template_name),
+        os.path.join(path_label, "%s.tpl" % template_name),
+    ]:
         if os.path.isfile(ftn):
             return ftn
 
     templates = glob.glob(os.path.join(path_label, "*.tpl"))
     if len(templates) > 0:
-        msg = ("These are the available %s templates:" % label)
-        msg += "\n - " + \
-               "\n - ".join(os.path.basename(f).split(".")[0]
-                            for f in templates)
+        msg = "These are the available %s templates:" % label
+        msg += "\n - " + "\n - ".join(
+            os.path.basename(f).split(".")[0] for f in templates
+        )
         msg += "\nTemplates are located in %r" % path_label
     else:
-        msg = "No available %s templates found in %r." \
-              % (label, path_label)
-    die("Error: Invalid %s template name %r.\n" % (label, template_name) +
-        "%s" % msg)
+        msg = "No available %s templates found in %r." % (label, path_label)
+    die("Error: Invalid %s template name %r.\n" % (label, template_name) + "%s" % msg)
 
 
 ##
 ## Output Engines
 ##
 
+
 @available_in_config
-def rest_py(data, opts={}):
+def rest_py(data, opts=None):
     """Returns ReStructured Text changelog content from data"""
+    opts = opts or {}
 
     def rest_title(label, char="="):
         return (label.strip() + "\n") + (char * len(label) + "\n")
 
     def render_version(version):
-        title = "%s (%s)" % (version["tag"], version["date"]) \
-                if version["tag"] else \
-                opts["unreleased_version_label"]
+        title = (
+            "%s (%s)" % (version["tag"], version["date"])
+            if version["tag"]
+            else opts["unreleased_version_label"]
+        )
         s = rest_title(title, char="-")
 
         sections = version["sections"]
         nb_sections = len(sections)
         for section in sections:
 
-            section_label = section["label"] if section.get("label", None) \
-                            else "Other"
+            section_label = section["label"] if section.get("label", None) else "Other"
 
             if not (section_label == "Other" and nb_sections == 1):
                 s += "\n" + rest_title(section_label, "~")
@@ -1330,12 +1192,11 @@ def rest_py(data, opts={}):
                 s += render_commit(commit)
         return s
 
-    def render_commit(commit, opts=opts):
+    def render_commit(commit):
         subject = commit["subject"]
-        subject += " [%s]" % (", ".join(commit["authors"]), )
+        subject += " [%s]" % (", ".join(commit["authors"]),)
 
-        entry = indent('\n'.join(textwrap.wrap(subject)),
-                       first="- ").strip() + "\n"
+        entry = indent('\n'.join(textwrap.wrap(subject)), first="- ").strip() + "\n"
 
         if commit["body"]:
             entry += "\n" + indent(commit["body"])
@@ -1368,19 +1229,20 @@ if pystache:
 
         def stuffed_versions(versions, opts):
             for version in versions:
-                title = "%s (%s)" % (version["tag"], version["date"]) \
-                        if version["tag"] else \
-                        opts["unreleased_version_label"]
+                title = (
+                    "%s (%s)" % (version["tag"], version["date"])
+                    if version["tag"]
+                    else opts["unreleased_version_label"]
+                )
                 version["label"] = title
                 version["label_chars"] = list(version["label"])
                 for section in version["sections"]:
                     section["label_chars"] = list(section["label"])
-                    section["display_label"] = \
-                        not (section["label"] == "Other" and
-                             len(version["sections"]) == 1)
+                    section["display_label"] = not (
+                        section["label"] == "Other" and len(version["sections"]) == 1
+                    )
                     for commit in section["commits"]:
-                        commit["author_names_joined"] = ", ".join(
-                            commit["authors"])
+                        commit["author_names_joined"] = ", ".join(commit["authors"])
                         commit["body_indented"] = indent(commit["body"])
                 yield version
 
@@ -1400,16 +1262,13 @@ if pystache:
 else:
 
     @available_in_config
-    def mustache(template_name):  ## pylint: disable=unused-argument
+    def mustache(template_name):  # pylint: disable=unused-argument
         die("Required 'pystache' python module not found.")
 
 
 if mako:
 
-    import mako.template ## pylint: disable=wrong-import-position
-
-    mako_env = dict((f.__name__, f) for f in (ucfirst, indent, textwrap,
-                                              paragraph_wrap))
+    mako_env = dict((f.__name__, f) for f in (ucfirst, indent, textwrap, paragraph_wrap))  # type: ignore
 
     @available_in_config
     def makotemplate(template_name):
@@ -1424,8 +1283,7 @@ if mako:
 
         def renderer(data, opts):
             kwargs = mako_env.copy()
-            kwargs.update({"data": data,
-                           "opts": opts})
+            kwargs.update({"data": data, "opts": opts})
             return template.render(**kwargs)
 
         return renderer
@@ -1433,7 +1291,7 @@ if mako:
 else:
 
     @available_in_config
-    def makotemplate(template_name):  ## pylint: disable=unused-argument
+    def makotemplate(template_name):  # pylint: disable=unused-argument
         die("Required 'mako' python module not found.")
 
 
@@ -1441,14 +1299,15 @@ else:
 ## Publish action
 ##
 
+
 @available_in_config
 def stdout(content):
     for chunk in content:
         safe_print(chunk)
-@available_in_config
-def FileInsertAtFirstRegexMatch(filename, pattern, flags=0,
-                                idx=lambda m: m.start()):
 
+
+@available_in_config
+def FileInsertAtFirstRegexMatch(filename, pattern, flags=0, idx=lambda m: m.start()):
     def write_content(f, content):
         for content_line in content:
             f.write(content_line)
@@ -1459,8 +1318,8 @@ def FileInsertAtFirstRegexMatch(filename, pattern, flags=0,
         new_offset = 0
         postfix = False
 
-        with open(filename + "~", "w") as dst:
-            with open(filename, "r") as src:
+        with open(filename + "~", "w", encoding=DEFAULT_ENCODING) as dst:
+            with open(filename, "r", encoding=DEFAULT_ENCODING) as src:
                 for line in src:
                     if postfix:
                         dst.write(line)
@@ -1470,9 +1329,9 @@ def FileInsertAtFirstRegexMatch(filename, pattern, flags=0,
                         offset = new_offset
                         dst.write(line)
                         continue
-                    dst.write(line[0:index - offset])
+                    dst.write(line[0 : index - offset])
                     write_content(dst, content)
-                    dst.write(line[index - offset:])
+                    dst.write(line[index - offset :])
                     postfix = True
             if not postfix:
                 write_content(dst, content)
@@ -1492,11 +1351,11 @@ def FileRegexSubst(filename, pattern, replace, flags=0):
         src = file_get_contents(filename)
         ## Protect replacement pattern against the following expansion of '\o'
         src = re.sub(
-                pattern,
-                replace.replace(r'\o', "".join(content).replace('\\', '\\\\')),
-                src, flags=flags)
-        if not PY3:
-            src = src.encode(_preferred_encoding)
+            pattern,
+            replace.replace(r'\o', "".join(content).replace('\\', '\\\\')),
+            src,
+            flags=flags,
+        )
         file_put_contents(filename, src)
 
     return _wrapped
@@ -1506,16 +1365,19 @@ def FileRegexSubst(filename, pattern, replace, flags=0):
 ## Data Structure
 ##
 
-def versions_data_iter(repository, revlist=None,
-                       ignore_regexps=[],
-                       section_regexps=[(None, '')],
-                       tag_filter_regexp=r"\d+\.\d+(\.\d+)?",
-                       include_merge=True,
-                       body_process=lambda x: x,
-                       subject_process=lambda x: x,
-                       log_encoding=DEFAULT_GIT_LOG_ENCODING,
-                       warn=warn,        ## Mostly used for test
-                       ):
+
+def versions_data_iter(
+    repository,
+    revlist=None,
+    ignore_regexps=None,
+    section_regexps=None,
+    tag_filter_regexp=r"\d+\.\d+(\.\d+)?",
+    include_merge=True,
+    body_process=lambda x: x,
+    subject_process=lambda x: x,
+    log_encoding=DEFAULT_GIT_LOG_ENCODING,
+    warn=warn,  # Mostly used for test
+):  # pylint: disable=W0102
     """Returns an iterator through versions data structures
 
     (see ``gitchangelog.rc.reference`` file for more info)
@@ -1536,23 +1398,34 @@ def versions_data_iter(repository, revlist=None,
     """
 
     revlist = revlist or []
+    ignore_regexps = ignore_regexps or []
+    section_regexps = section_regexps or [(None, '')]
 
     ## Hash to speedup lookups
     versions_done = {}
-    excludes = [rev[1:]
-                for rev in repository.git.rev_parse([
-                    "--rev-only", ] + revlist + ["--", ]).split("\n")
-                if rev.startswith("^")] if revlist else []
+    excludes = (
+        [
+            rev[1:]
+            for rev in repository.git.rev_parse(
+                ["--rev-only"] + revlist + ["--"]
+            ).split("\n")
+            if rev.startswith("^")
+        ]
+        if revlist
+        else []
+    )
 
     revs = repository.git.rev_list(*revlist).split("\n") if revlist else []
     revs = [rev for rev in revs if rev != ""]
 
     if revlist and not revs:
-        die("No commits matching given revlist: %s" % (" ".join(revlist), ))
+        die("No commits matching given revlist: %s" % (" ".join(revlist),))
 
-    tags = [tag
-            for tag in repository.tags(contains=revs[-1] if revs else None)
-            if re.match(tag_filter_regexp, tag.identifier)]
+    tags = [
+        tag
+        for tag in repository.tags(contains=revs[-1] if revs else None)
+        if re.match(tag_filter_regexp, tag.identifier)
+    ]
 
     tags.append(repository.commit("HEAD"))
 
@@ -1586,40 +1459,47 @@ def versions_data_iter(repository, revlist=None,
         sections = collections.defaultdict(list)
         commits = repository.log(
             includes=[min(tag, max_rev)],
-            excludes=tags[idx + 1:] + excludes,
+            excludes=tags[idx + 1 :] + excludes,
             include_merge=include_merge,
-            encoding=log_encoding)
+            encoding=log_encoding,
+        )
 
         for commit in commits:
-            if any(re.search(pattern, commit.subject) is not None
-                   for pattern in ignore_regexps):
+            if any(
+                re.search(pattern, commit.subject) is not None
+                for pattern in ignore_regexps
+            ):
                 continue
 
             matched_section = first_matching(section_regexps, commit.subject)
 
             ## Finally storing the commit in the matching section
 
-            sections[matched_section].append({
-                "author": commit.author_name,
-                "authors": commit.author_names,
-                "subject": subject_process(commit.subject),
-                "body": body_process(commit.body),
-                "commit": commit,
-            })
+            sections[matched_section].append(
+                {
+                    "author": commit.author_name,
+                    "authors": commit.author_names,
+                    "subject": subject_process(commit.subject),
+                    "body": body_process(commit.body),
+                    "commit": commit,
+                }
+            )
 
         ## Flush current version
-        current_version["sections"] = [{"label": k, "commits": sections[k]}
-                                       for k in section_order
-                                       if k in sections]
+        current_version["sections"] = [
+            {"label": k, "commits": sections[k]} for k in section_order if k in sections
+        ]
         if len(current_version["sections"]) != 0:
             yield current_version
         versions_done[tag] = current_version
 
 
-def changelog(output_engine=rest_py,
-              unreleased_version_label="unreleased",
-              warn=warn,        ## Mostly used for test
-              **kwargs):
+def changelog(
+    output_engine=rest_py,
+    unreleased_version_label="unreleased",
+    warn=warn,  # Mostly used for test
+    **kwargs,
+):
     """Returns a string containing the changelog of given repository
 
     This function returns a string corresponding to the template rendered with
@@ -1644,8 +1524,7 @@ def changelog(output_engine=rest_py,
 
     ## Setting main container of changelog elements
     title = None if kwargs.get("revlist") else "Changelog"
-    data = {"title": title,
-            "versions": []}
+    data = {"title": title, "versions": []}
 
     versions = versions_data_iter(warn=warn, **kwargs)
 
@@ -1659,6 +1538,7 @@ def changelog(output_engine=rest_py,
         data["versions"] = itertools.chain([first_version], versions)
 
     return output_engine(data=data, opts=opts)
+
 
 ##
 ## Manage obsolete options
@@ -1681,9 +1561,9 @@ def obsolete_replace_regexps(config):
     """
     if "replace_regexps" in config:
         for pattern, replace in config["replace_regexps"].items():
-            config["subject_process"] = \
-                ReSub(pattern, replace) | \
-                config.get("subject_process", ucfirst | final_dot)
+            config["subject_process"] = ReSub(pattern, replace) | config.get(
+                "subject_process", ucfirst | final_dot
+            )
 
 
 @obsolete_option_manager
@@ -1695,8 +1575,9 @@ def obsolete_body_split_regexp(config):
 
     """
     if "body_split_regex" in config:
-        config["body_process"] = Wrap(config["body_split_regex"]) | \
-                                 config.get("body_process", noop)
+        config["body_process"] = Wrap(config["body_split_regex"]) | config.get(
+            "body_process", noop
+        )
 
 
 def manage_obsolete_options(config):
@@ -1708,47 +1589,38 @@ def manage_obsolete_options(config):
 ## Command line parsing
 ##
 
-def parse_cmd_line(usage, description, epilog, exname, version):
 
-    import argparse
-    kwargs = dict(usage=usage,
-                  description=description,
-                  epilog="\n" + epilog,
-                  prog=exname,
-                  formatter_class=argparse.RawTextHelpFormatter)
+def parse_cmd_line(usage, description, epilog, exname):
 
-    try:
-        parser = argparse.ArgumentParser(version=version, **kwargs)
-    except TypeError:  ## compat with argparse from python 3.4
-        parser = argparse.ArgumentParser(**kwargs)
-        parser.add_argument('-v', '--version',
-                            help="show program's version number and exit",
-                            action="version", version=version)
+    kwargs = dict(
+        usage=usage,
+        description=description,
+        epilog="\n" + epilog,
+        prog=exname,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
 
-    parser.add_argument('-d', '--debug',
-                        help="Enable debug mode (show full tracebacks).",
-                        action="store_true", dest="debug")
+    parser = argparse.ArgumentParser(**kwargs)
+    parser.add_argument("--version", action="version", version=f"gitchangelog {VERSION}")
+    parser.add_argument(
+        '-d',
+        '--debug',
+        help="Enable debug mode (show full tracebacks).",
+        action="store_true",
+        dest="debug",
+    )
     parser.add_argument('revlist', nargs='*', action="store", default=[])
 
-    ## Remove "show" as first argument for compatibility reason.
-
-    argv = []
-    for i, arg in enumerate(sys.argv[1:]):
-        if arg.startswith("-"):
-            argv.append(arg)
-            continue
-        if arg == "show":
-            warn("'show' positional argument is deprecated.")
-            argv += sys.argv[i + 2:]
-            break
-        else:
-            argv += sys.argv[i + 1:]
-            break
-
-    return parser.parse_args(argv)
+    return parser.parse_args()
 
 
-eval_if_callable = lambda v: v() if callable(v) else v
+def eval_if_callable(v):
+    """
+    Rewritten lambda expression
+    """
+    if callable(v):
+        return v()
+    return v
 
 
 def get_revision(repository, config, opts):
@@ -1759,19 +1631,20 @@ def get_revision(repository, config, opts):
         if revs:
             revs = eval_if_callable(revs)
             if not isinstance(revs, list):
-                die("Invalid type for 'revs' in config file. "
-                    "A 'list' type is required, and a %r was given."
-                    % type(revs).__name__)
-            revs = [eval_if_callable(rev)
-                    for rev in revs]
+                die(
+                    "Invalid type for 'revs' in config file. "
+                    "A 'list' type is required, and a %r was given." % type(revs).__name__
+                )
+            revs = [eval_if_callable(rev) for rev in revs]
         else:
             revs = []
 
     for rev in revs:
-        if not isinstance(rev, basestring):
-            die("Invalid type for revision in revs list from config file. "
-                "'str' type is required, and a %r was given."
-                % type(rev).__name__)
+        if not isinstance(rev, str):
+            die(
+                "Invalid type for revision in revs list from config file. "
+                "'str' type is required, and a %r was given." % type(rev).__name__
+            )
         try:
             repository.git.rev_parse([rev, "--rev_only", "--"])
         except ShellError:
@@ -1779,7 +1652,9 @@ def get_revision(repository, config, opts):
                 raise
             die("Revision %r is not valid." % rev)
 
-    if revs == ["HEAD", ]:
+    if revs == [
+        "HEAD",
+    ]:
         return []
     return revs
 
@@ -1793,8 +1668,8 @@ def get_log_encoding(repository, config):
         except ShellError as e:
             warn(
                 "Error parsing git config: %s."
-                " Couldn't check if 'i18n.logOuputEncoding' was set."
-                % (str(e)))
+                " Couldn't check if 'i18n.logOuputEncoding' was set." % (str(e))
+            )
 
     ## Final defaults coming from git defaults
     return log_encoding or DEFAULT_GIT_LOG_ENCODING
@@ -1804,23 +1679,20 @@ def get_log_encoding(repository, config):
 ## Config Manager
 ##
 
-class Config(dict):
 
+class Config(dict):
     def __getitem__(self, label):
         if label not in self.keys():
             die("Missing value in config file for key '%s'." % label)
-        return super(Config, self).__getitem__(label)
+        return super().__getitem__(label)
 
 
 ##
 ## Safe print
 ##
 
-def safe_print(content):
-    if not PY3:
-        if isinstance(content, unicode):
-            content = content.encode(_preferred_encoding)
 
+def safe_print(content):
     try:
         print(content, end='')
         sys.stdout.flush()
@@ -1829,7 +1701,10 @@ def safe_print(content):
             raise
         ## XXXvlab: should use $COLUMNS in bash and for windows:
         ## http://stackoverflow.com/questions/14978548
-        stderr(paragraph_wrap(textwrap.dedent("""\
+        stderr(
+            paragraph_wrap(
+                textwrap.dedent(
+                    """\
             UnicodeEncodeError:
               There was a problem outputing the resulting changelog to
               your console.
@@ -1837,35 +1712,37 @@ def safe_print(content):
               This probably means that the changelog contains characters
               that can't be translated to characters in your current charset
               (%s).
-            """) % sys.stdout.encoding))
+            """
+                )
+                % sys.stdout.encoding
+            )
+        )
         if WIN32 and PY_VERSION < 3.6 and sys.stdout.encoding != 'utf-8':
             ## As of PY 3.6, encoding is now ``utf-8`` regardless of
             ## PYTHONIOENCODING
             ## https://www.python.org/dev/peps/pep-0528/
-            stderr("  You might want to try to fix that by setting "
-                   "PYTHONIOENCODING to 'utf-8'.")
-        exit(1)
+            stderr(
+                "  You might want to try to fix that by setting "
+                "PYTHONIOENCODING to 'utf-8'."
+            )
+        sys.exit(1)
     except IOError as e:
-        if e.errno == 0 and not PY3 and WIN32:
-            ## Yes, had a strange IOError Errno 0 after outputing string
-            ## that contained UTF-8 chars on Windows and PY2.7
-            pass  ## Ignoring exception
-        elif ((WIN32 and e.errno == 22) or              ## Invalid argument
-              (not WIN32 and e.errno == errno.EPIPE)):  ## Broken Pipe
-            ## Nobody is listening anymore to stdout it seems. Let's bailout.
-            if PY3:
-                try:
-                    ## Called only to generate exception and have a chance at
-                    ## ignoring it. Otherwise this happens upon exit, and gets
-                    ## some error message printed on stderr.
-                    sys.stdout.close()
-                except BrokenPipeError:  ## expected outcome on linux
-                    pass
-                except OSError as e2:
-                    if e2.errno != 22:   ## expected outcome on WIN32
-                        raise
+        if (WIN32 and e.errno == 22) or (  # Invalid argument
+            not WIN32 and e.errno == errno.EPIPE
+        ):  # Broken Pipe
+            # Nobody is listening anymore to stdout it seems. Let's bailout.
+            try:
+                ## Called only to generate exception and have a chance at
+                ## ignoring it. Otherwise this happens upon exit, and gets
+                ## some error message printed on stderr.
+                sys.stdout.close()
+            except BrokenPipeError:  # expected outcome on linux
+                pass
+            except OSError as e2:
+                if e2.errno != 22:  # expected outcome on WIN32
+                    raise
             ## Yay ! stdout is closed we can now exit safely.
-            exit(0)
+            sys.exit(0)
         else:
             raise
 
@@ -1874,14 +1751,14 @@ def safe_print(content):
 ## Main
 ##
 
+
 def main():
 
-    global DEBUG
     ## Basic environment infos
 
     reference_config = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        "gitchangelog.rc.reference")
+        os.path.dirname(os.path.realpath(__file__)), "gitchangelog.rc.reference"
+    )
 
     basename = os.path.basename(sys.argv[0])
     if basename.endswith(".py"):
@@ -1892,12 +1769,13 @@ def main():
 
     i = lambda x: x % {'exname': basename}
 
-    opts = parse_cmd_line(usage=i(usage_msg),
-                          description=i(description_msg),
-                          epilog=i(epilog_msg),
-                          exname=basename,
-                          version=__version__)
-    DEBUG = DEBUG or opts.debug
+    options = parse_cmd_line(
+        usage=i(usage_msg),
+        description=i(description_msg),
+        epilog=i(epilog_msg),
+        exname=basename,
+    )
+    DEBUG = DEBUG or options.debug
 
     try:
         repository = GitRepos(".")
@@ -1914,8 +1792,8 @@ def main():
     except ShellError as e:
         stderr(
             "Error parsing git config: %s."
-            " Won't be able to read 'rc-path' if defined."
-            % (str(e)))
+            " Won't be able to read 'rc-path' if defined." % (str(e))
+        )
         gc_rc = None
 
     gc_rc = normpath(gc_rc, cwd=repository.toplevel) if gc_rc else None
@@ -1924,16 +1802,20 @@ def main():
     for enforce_file_existence, fun in [
         (True, lambda: os.environ.get('GITCHANGELOG_CONFIG_FILENAME')),
         (True, lambda: gc_rc),
-        (False,
-             lambda: (os.path.join(repository.toplevel, ".%s.rc" % basename))
-                      if not repository.bare else None)]:
+        (
+            False,
+            lambda: (os.path.join(repository.toplevel, ".%s.rc" % basename))
+            if not repository.bare
+            else None,
+        ),
+    ]:
         changelogrc = fun()
         if changelogrc:
             if not os.path.exists(changelogrc):
                 if enforce_file_existence:
                     die("File %r does not exist." % changelogrc)
                 else:
-                    continue  ## changelogrc valued, but file does not exist
+                    continue  # changelogrc valued, but file does not exist
             else:
                 break
 
@@ -1944,19 +1826,22 @@ def main():
     config = load_config_file(
         os.path.expanduser(changelogrc),
         default_filename=reference_config,
-        fail_if_not_present=False)
+        fail_if_not_present=False,
+    )
 
     config = Config(config)
 
     log_encoding = get_log_encoding(repository, config)
-    revlist = get_revision(repository, config, opts)
+    revlist = get_revision(repository, config, options)
     config['unreleased_version_label'] = eval_if_callable(
-        config['unreleased_version_label'])
+        config['unreleased_version_label']
+    )
     manage_obsolete_options(config)
 
     try:
         content = changelog(
-            repository=repository, revlist=revlist,
+            repository=repository,
+            revlist=revlist,
             ignore_regexps=config['ignore_regexps'],
             section_regexps=config['section_regexps'],
             unreleased_version_label=config['unreleased_version_label'],
@@ -1968,32 +1853,34 @@ def main():
             log_encoding=log_encoding,
         )
 
-        if isinstance(content, basestring):
+        if isinstance(content, str):
             content = content.splitlines(True)
 
         config.get("publish", stdout)(content)
 
     except KeyboardInterrupt:
         if DEBUG:
-            err("Keyboard interrupt received while running '%s':"
-                % (basename, ))
+            err("Keyboard interrupt received while running '%s':" % (basename,))
             stderr(format_last_exception())
         else:
             err("Keyboard Interrupt. Bailing out.")
-        exit(130)  ## Actual SIGINT as bash process convention.
-    except Exception as e:  ## pylint: disable=broad-except
+        sys.exit(130)  # Actual SIGINT as bash process convention.
+    except Exception as e:  # pylint: disable=broad-except
         if DEBUG:
-            err("Exception while running '%s':"
-                % (basename, ))
+            err("Exception while running '%s':" % (basename,))
             stderr(format_last_exception())
         else:
             message = "%s" % e
             err(message)
-            stderr("  (set %s environment variable, "
-                   "or use ``--debug`` to see full traceback)" %
-                   (debug_varname, ))
-        exit(255)
+            stderr(
+                "  (set %s environment variable, "
+                "or use ``--debug`` to see full traceback)" % (debug_varname,)
+            )
+        sys.exit(255)
 
+
+DEBUG = ''
+VERSION = pkg_resources.get_distribution('gitchangelog').version
 
 ##
 ## Launch program

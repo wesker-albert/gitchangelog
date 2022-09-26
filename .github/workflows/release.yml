@@ -7,7 +7,7 @@ on:
       - '*'
 
 jobs:
-  wheels:
+  packaging:
 
     runs-on: ${{ matrix.os }}
     defaults:
@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9, '3.10']
+        python-version: [3.7, 3.8, 3.9, '3.10']
         exclude:
           - os: windows-latest
             python-version: 2.7
@@ -46,18 +46,18 @@ jobs:
 
     - name: Build dist pkgs
       run: |
-        tox -e deploy
+        tox -e build
 
     - name: Upload artifacts
       if: matrix.python-version == 3.7 && runner.os == 'Linux'
       uses: actions/upload-artifact@v2
       with:
-        name: wheels
-        path: ./dist/*.whl
+        name: packages
+        path: ./dist/gitchangelog-*
 
   create_release:
     name: Create Release
-    needs: [wheels]
+    needs: [packaging]
     runs-on: ubuntu-20.04
 
     steps:
@@ -91,4 +91,4 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            wheels/gitchangelog*.whl
+            packages/gitchangelog-*
