@@ -361,9 +361,7 @@ def FileFirstRegexMatch(filename, pattern):
         dct = match.groupdict()
         if dct:
             if "rev" not in dct:
-                warn(
-                    "Named pattern used, but no one are named 'rev'. " "Using full match."
-                )
+                warn("Named pattern used, but none are named 'rev'. Using full match.")
                 return match.group(0)
             if dct['rev'] is None:
                 die("Named pattern used, but it was not valued.")
@@ -756,7 +754,9 @@ class GitCommit(SubGitObjectMixin):
                     setattr(
                         self,
                         "trailer_%s" % key,
-                        prev_value + [value] if isinstance(prev_value, list) else [prev_value, value],
+                        prev_value + [value]
+                        if isinstance(prev_value, list)
+                        else [prev_value, value],
                     )
         self._trailer_parsed = True
         return getattr(self, label)
@@ -1053,7 +1053,7 @@ class GitRepos:
         excludes=None,
         include_merge=True,
         encoding=_preferred_encoding,
-    ):  # pylint: disable=W0102
+    ):
         """Reverse chronological list of git repository's commits
 
         Note: rev lists can be GitCommit instance list or identifier list.
@@ -1377,7 +1377,7 @@ def versions_data_iter(
     subject_process=lambda x: x,
     log_encoding=DEFAULT_GIT_LOG_ENCODING,
     warn=warn,  # Mostly used for test
-):  # pylint: disable=W0102
+):
     """Returns an iterator through versions data structures
 
     (see ``gitchangelog.rc.reference`` file for more info)
@@ -1406,9 +1406,9 @@ def versions_data_iter(
     excludes = (
         [
             rev[1:]
-            for rev in repository.git.rev_parse(
-                ["--rev-only"] + revlist + ["--"]
-            ).split("\n")
+            for rev in repository.git.rev_parse(["--rev-only"] + revlist + ["--"]).split(
+                "\n"
+            )
             if rev.startswith("^")
         ]
         if revlist

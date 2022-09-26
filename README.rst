@@ -2,9 +2,9 @@
 gitchangelog
 ============
 
-|ci| |release|
+|ci| |release| |badge| |coverage|
 
-|cov| |quality|
+|cov| |pylint|
 
 |tag| |license| |python|
 
@@ -604,6 +604,30 @@ Licensed under the `BSD License`_.
 .. _BSD License: http://raw.github.com/sarnold/gitchangelog/master/LICENSE
 
 
+.. |ci| image:: https://github.com/sarnold/gitchangelog/actions/workflows/ci.yml/badge.svg
+    :target: https://github.com/sarnold/gitchangelog/actions/workflows/ci.yml
+    :alt: CI Status
+
+.. |coverage| image:: https://github.com/sarnold/gitchangelog/actions/workflows/coverage.yml/badge.svg
+    :target: https://github.com/sarnold/gitchangelog/actions/workflows/coverage.yml
+    :alt: Coverage workflow
+
+.. |badge| image:: https://github.com/sarnold/gitchangelog/actions/workflows/pylint.yml/badge.svg
+    :target: https://github.com/sarnold/gitchangelog/actions/workflows/pylint.yml
+    :alt: Pylint Status
+
+.. |release| image:: https://github.com/sarnold/gitchangelog/actions/workflows/release.yml/badge.svg
+    :target: https://github.com/sarnold/gitchangelog/actions/workflows/release.yml
+    :alt: Release Status
+
+.. |cov| image:: https://raw.githubusercontent.com/sarnold/gitchangelog/badges/master/test-coverage.svg
+    :target: https://github.com/sarnold/gitchangelog/
+    :alt: Test coverage
+
+.. |pylint| image:: https://raw.githubusercontent.com/sarnold/gitchangelog/badges/master/pylint-score.svg
+    :target: https://github.com/sarnold/gitchangelog/actions/workflows/pylint.yml
+    :alt: Pylint score
+
 .. |license| image:: https://img.shields.io/pypi/l/gitchangelog?color=blue
     :target: https://github.com/sarnold/gitchangelog/blob/master/LICENSE
     :alt: License
@@ -611,22 +635,6 @@ Licensed under the `BSD License`_.
 .. |tag| image:: https://img.shields.io/github/v/tag/sarnold/gitchangelog?color=blue&include_prereleases&label=latest%20release
     :target: https://github.com/sarnold/gitchangelog/releases
     :alt: GitHub tag (latest SemVer, including pre-release)
-
-.. |ci| image:: https://github.com/sarnold/gitchangelog/actions/workflows/ci.yml/badge.svg
-    :target: https://github.com/sarnold/gitchangelog/actions/workflows/ci.yml
-    :alt: CI Workflow Status
-
-.. |release| image:: https://github.com/sarnold/gitchangelog/actions/workflows/release.yml/badge.svg
-    :target: https://github.com/sarnold/gitchangelog/actions/workflows/release.yml
-    :alt: Release Workflow Status
-
-.. |cov| image:: https://img.shields.io/codecov/c/github/sarnold/gitchangelog
-    :target: https://codecov.io/gh/sarnold/gitchangelog
-    :alt: Test coverage
-
-.. |quality| image:: https://img.shields.io/codeclimate/maintainability/sarnold/gitchangelog
-    :target: https://codeclimate.com/github/sarnold/gitchangelog
-    :alt: Code Climate rating
 
 .. |python| image:: https://img.shields.io/badge/python-3.6+-blue.svg
     :target: https://www.python.org/downloads/
