@@ -14,9 +14,15 @@ gitchangelog
 
 .. note:: The updated version of gitchangelog works best with the updated
           pystache version `available here`_  (as well as on pypi now).
+          If pip fails to install pystache from Pypi, you can install it
+          using the full github URL of the wheel or sdist on the GH release
+          page, eg::
+
+            pip install https://github.com/VCTLabs/pystache/releases/download/v0.6.2/pystache-0.6.2.tar.gz
+
           Please file a github issue here if you encounter any problems.
 
-.. _available here: https://github.com/sarnold/pystache
+.. _available here: https://github.com/VCTLabs/pystache
 
 
 Features
@@ -63,11 +69,11 @@ full package
 The updated gitchangelog is *not* published on PyPI, thus use one of the
 following to install the latest gitchangelog on any platform::
 
-  $ pip install -U -f https://github.com/sarnold/gitchangelog/releases/ gitchangelog
+  $ pip install https://github.com/sarnold/gitchangelog/releases/download/3.0.9/gitchangelog-3.0.9-py3-none-any.whl
 
-or use this command to install a specific version::
+or use this command to install from sdist::
 
-  $ pip install git+https://github.com/sarnold/gitchangelog.git@3.0.7
+  $ pip install https://github.com/sarnold/gitchangelog/releases/download/3.0.10/gitchangelog-3.0.10.tar.gz
 
 The full package provides the ``gitchangelog.py`` executable as well as:
 
@@ -418,7 +424,7 @@ an existing changelog. Usually this makes sense:
 - You'd rather commit changes to your changelog file for each release:
 
   - For performance reason, you can then generate changelog only for
-    the new commit and save the result.
+    the new commit(s) and save the result.
   - Because you want to be able to edit it to make some minor
     edition if needed.
 
