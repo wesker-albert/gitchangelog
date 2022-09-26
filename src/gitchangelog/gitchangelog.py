@@ -640,7 +640,6 @@ class GitCommit(SubGitObjectMixin):
     all the values have already been computed.
 
     Trailer
-    =======
 
     ``GitCommit`` offers a simple direct API to trailer values. These
     are like RFC822's header value but are at the end of body:
@@ -659,7 +658,7 @@ class GitCommit(SubGitObjectMixin):
         'Supports multi\nline values'
 
     Notice how the multi-line value was unindented.
-    In case of multiple values, these are concatened in lists:
+    In case of multiple values, these are concatenated in lists:
 
         >>> BODY = '''\
         ... Stuff in the body
@@ -675,10 +674,8 @@ class GitCommit(SubGitObjectMixin):
 
 
     Special values
-    ==============
 
-    Authors
-    -------
+    *Authors*
 
         >>> BODY = '''\
         ... Stuff in the body
@@ -883,7 +880,6 @@ class GitConfig(SubGitObjectMixin):
         'bar'
 
     Default values
-    --------------
 
     get item, and getattr default values can be used:
 
