@@ -28,9 +28,6 @@ gitchangelog
 Features
 ========
 
-- now available as a `github action`_ for use in release workflows
-- default github release action Markdown config and ``get-rcpath`` script
-  to find it (see the `gitchangelog.rc.github.release file`_)
 - fully driven by a config file that can be tailored with your changelog
   policies. (see for example the `reference configuration file`_)
 - filter out commits/tags based on regexp matching
@@ -42,8 +39,9 @@ Features
 - support full or incremental changelog generation to match your needs.
 - support easy access to `trailers key values`_ (if you use them)
 - support of multi-authors for one commit through ``Co-Authored-By`` `trailers key values`_
-- support standard python installation or dep-free single executable.
-  (this last feature is not yet completely pain free to use on Windows)
+- now available as a `github action`_ for use in release workflows
+- default github release action Markdown config and ``get-rcpath`` script
+  to find it (see the `gitchangelog.rc.github.release file`_)
 
 .. _github action: https://github.com/sarnold/gitchangelog-action
 .. _gitchangelog.rc.github.release file: https://github.com/sarnold/gitchangelog/blob/master/src/gitchangelog/gitchangelog.rc.github.release
