@@ -1,6 +1,6 @@
-============
-gitchangelog
-============
+===========================================================
+ gitchangelog - generate custom changelog from git history
+===========================================================
 
 |ci| |release| |badge| |coverage|
 
@@ -16,13 +16,15 @@ gitchangelog
           pystache version `available here`_  (as well as on pypi now).
           If pip fails to install pystache from Pypi, you can install it
           using the full github URL of the wheel or sdist on the GH release
-          page, eg::
+          page; check the `new upstream first`_, otherwise the newest test
+          release is here::
 
             pip install https://github.com/VCTLabs/pystache/releases/download/v0.6.2/pystache-0.6.2.tar.gz
 
           Please file a github issue here if you encounter any problems.
 
 .. _available here: https://github.com/VCTLabs/pystache
+.. _new upstream first: https://github.com/PennyDreadfulMTG/pystache
 
 
 Features
@@ -69,7 +71,7 @@ full package
 The updated gitchangelog is *not* published on PyPI, thus use one of the
 following to install the latest gitchangelog on any platform::
 
-  $ pip install https://github.com/sarnold/gitchangelog/releases/download/3.0.9/gitchangelog-3.0.9-py3-none-any.whl
+  $ pip install https://github.com/sarnold/gitchangelog/releases/download/3.1.0/gitchangelog-3.1.0-py3-none-any.whl
 
 or use this command to install from sdist::
 
@@ -95,14 +97,16 @@ idiom to install it on your system in a virtual env::
   $ pytest -v .
   $ deactivate
 
-Note that for linux/BSD, there's a link to the executable in the root of the
-source. This can be a convenient way to work on the source version.
-
 The alternative to python venv is the ``tox`` test driver.  If you have it
 installed already, use the following commands to run the test environments
 from the gitchangelog source directory.
 
-To run tests::
+Use a pip dev install; this can be a convenient way to work on the source
+version::
+
+  $ tox -e dev
+
+To run tests using default system Python::
 
   $ tox -e py
 
