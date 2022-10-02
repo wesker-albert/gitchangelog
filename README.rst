@@ -12,6 +12,9 @@
 **Use your commit log to make a beautiful and configurable changelog file.**
 
 
+This updated fork of gitchangelog is currently tested on Python 3.7+ on
+Linux, Macos, and Windows (Python 2.7 support has been removed).
+
 .. note:: The updated version of gitchangelog works best with the updated
           pystache version `available here`_  (as well as on pypi now).
           If pip fails to install pystache from Pypi, you can install it
