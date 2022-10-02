@@ -11,7 +11,7 @@ minversion = "6.0"
 testpaths = ["test", "src/gitchangelog",]
 log_cli =  false
 doctest_optionflags = ["ELLIPSIS", "NORMALIZE_WHITESPACE",]
-addopts = "--doctest-modules"
+addopts = "-ra -q -p no:warnings"
 
 [tool.coverage.run]
 branch = true
