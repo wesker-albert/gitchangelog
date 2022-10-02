@@ -493,7 +493,7 @@ def cmd(command, env=None, shell=True):
         env=env,
         universal_newlines=False,
     ) as p:
-        out, err = p.communicate()
+        out, err = p.communicate(timeout=15)
 
     return (
         out.decode(getattr(sys.stdout, "encoding", None) or _preferred_encoding),
@@ -1095,6 +1095,7 @@ class GitRepos:
         finally:
             plog.stdout.close()
             plog.stderr.close()
+            plog.kill()
 
 
 def first_matching(section_regexps, string):  # pylint: disable=R1710
