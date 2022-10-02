@@ -493,7 +493,11 @@ def cmd(command, env=None, shell=True):
         env=env,
         universal_newlines=False,
     ) as p:
-        out, err = p.communicate(timeout=15)
+        try:
+            out, err = p.communicate(timeout=60)
+        except TimeoutExpired:
+            p.kill()
+            out, err = p.communicate()
 
     return (
         out.decode(getattr(sys.stdout, "encoding", None) or _preferred_encoding),
