@@ -2,6 +2,31 @@ Changelog
 =========
 
 
+3.1.1 (2022-10-02)
+------------------
+
+Changes
+~~~~~~~
+- Add readme note about no more Python 2.7 support. [Stephen L Arnold]
+
+Fixes
+~~~~~
+- Update packaging and pytest env, restore missing bits. [Stephen L
+  Arnold]
+
+  * add Popen kill to git invocation, remove ResourceWarnings hidden
+    by default pytest cfg
+  * make sure pytest does not filter any warnings
+  * make sure version attribute matches new version imports
+  * restore missing CHANGES file and workflow env var
+
+Other
+~~~~~
+- Merge pull request #9 from sarnold/pkg-fixes. [Steve Arnold]
+
+  packaging and warnings cleanup
+
+
 3.1.0 (2022-10-01)
 ------------------
 
