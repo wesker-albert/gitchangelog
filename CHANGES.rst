@@ -2,7 +2,22 @@ Changelog
 =========
 
 
-3.1.1 (2022-10-02)
+3.1.2 (2022-10-30)
+------------------
+
+Fixes
+~~~~~
+- Add missing import for exception handler, use correct version.
+  [Stephen L Arnold]
+
+Other
+~~~~~
+- Merge pull request #10 from sarnold/pkg-hotfix. [Steve Arnold]
+
+  fix some nits, include CHANGES file in MANIFEST.in
+
+
+3.1.1 (2022-10-03)
 ------------------
 
 Changes
@@ -22,6 +37,7 @@ Fixes
 
 Other
 ~~~~~
+- Update changes file for release. [Stephen L Arnold]
 - Merge pull request #9 from sarnold/pkg-fixes. [Steve Arnold]
 
   packaging and warnings cleanup
