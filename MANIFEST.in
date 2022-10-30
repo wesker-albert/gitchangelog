@@ -1,6 +1,6 @@
 graft test
 graft docs
 
-include tox.ini README.rst INSTALL.rst
+include tox.ini README.rst INSTALL.rst CHANGES.rst
 
 global-exclude *~ *.py[cod]
