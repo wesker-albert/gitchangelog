@@ -15,7 +15,7 @@ import re
 import sys
 import textwrap
 import traceback
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen, TimeoutExpired
 
 import pkg_resources
 
