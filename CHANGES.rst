@@ -5,8 +5,13 @@ Changelog
 3.1.2 (2022-10-30)
 ------------------
 
+Changes
+~~~~~~~
+- Update changes file for new release. [Stephen L Arnold]
+
 Fixes
 ~~~~~
+- Restore missing percentage in coverage display. [Stephen L Arnold]
 - Add missing import for exception handler, use correct version.
   [Stephen L Arnold]
 

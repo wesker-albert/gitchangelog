@@ -172,7 +172,7 @@ jobs:
       run: |
         COVERAGE=$( cat code-coverage-results.txt | grep -e ^Summary | grep -o -E "${VALUE} = .{3}" | egrep -o '([0-9]+)' )
         echo "coverage=${COVERAGE}" >> $GITHUB_OUTPUT
-        echo "coverage-rounded-display=${COVERAGE}" >> $GITHUB_OUTPUT
+        echo "coverage-rounded-display=${COVERAGE}%" >> $GITHUB_OUTPUT
         echo "Current coverage is: ${COVERAGE}%"
 
     - name: Code Coverage Summary Report
