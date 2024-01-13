@@ -774,6 +774,13 @@ class GitCommit(SubGitObjectMixin):
         co_authors = getattr(self, 'trailer_co_authored_by', [])
         co_authors = co_authors if isinstance(co_authors, list) else [co_authors]
         return sorted(co_authors + ["%s <%s>" % (self.author_name, self.author_email)])
+    
+    @property
+    def author_github(self):
+        if not self.author_email:
+            return self.author_name
+        sub = re.search("\+(.*?)\@", self.author_email)
+        return f"@{sub.group(1)}" if sub else self.author_name
 
     @property
     def date(self):
