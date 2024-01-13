@@ -779,9 +779,8 @@ class GitCommit(SubGitObjectMixin):
     def author_github(self):
         if not self.author_email:
             return ""
-        sub = re.search("+\(.*?)\@", self.author_email)
+        sub = re.search("\+(.*?)\@", self.author_email)
         return sub.group(1) if sub else ""
-
 
     @property
     def date(self):
