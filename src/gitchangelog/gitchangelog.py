@@ -779,8 +779,19 @@ class GitCommit(SubGitObjectMixin):
     def author_github(self):
         if not self.author_email:
             return self.author_name
-        sub = re.search("\+(.*?)\@", self.author_email)
-        return f"@{sub.group(1)}" if sub else self.author_name
+        sub = re.search("\+(.*?)\@users\.noreply\.github\.com", self.author_email)
+        return f"[{sub.group(1)}](https://github.com/{sub.group(1)})" if sub else self.author_name
+    
+    @property
+    def subject_number(self):
+        if not self.subject:
+            return ""
+        sub = re.search("\s\(\#(.[0-9]*?)\)", self.subject)
+        return sub.group(1) if sub else ""
+
+    @property
+    def sha(self):
+        return self.sha1
 
     @property
     def date(self):
@@ -1489,6 +1500,8 @@ def versions_data_iter(
                     "authors": commit.author_names,
                     "author_github": commit.author_github,
                     "subject": subject_process(commit.subject),
+                    "subject_number": commit.subject_number,
+                    "sha1": commit.sha,
                     "body": body_process(commit.body),
                     "commit": commit,
                 }
@@ -1505,7 +1518,7 @@ def versions_data_iter(
 
 def changelog(
     output_engine=rest_py,
-    unreleased_version_label="unreleased",
+    unreleased_version_label="[Unreleased]",
     warn=warn,  # Mostly used for test
     **kwargs,
 ):
