@@ -1181,7 +1181,7 @@ def rest_py(data, opts=None):
 
     def render_version(version):
         title = (
-            "%s (%s)" % (version["tag"], version["date"])
+            "[%s] - %s" % (version["tag"], version["date"])
             if version["tag"]
             else opts["unreleased_version_label"]
         )
@@ -1238,7 +1238,7 @@ if pystache:
         def stuffed_versions(versions, opts):
             for version in versions:
                 title = (
-                    "%s (%s)" % (version["tag"], version["date"])
+                    "[%s] - %s" % (version["tag"], version["date"])
                     if version["tag"]
                     else opts["unreleased_version_label"]
                 )
@@ -1487,6 +1487,7 @@ def versions_data_iter(
                 {
                     "author": commit.author_name,
                     "authors": commit.author_names,
+                    "author_github": commit.author_github,
                     "subject": subject_process(commit.subject),
                     "body": body_process(commit.body),
                     "commit": commit,
